@@ -51,6 +51,7 @@ npm start         # http://localhost:3000 — hem oyunu hem Socket.IO'yu sunar
 |---|---|---|
 | `PORT` | `3000` | HTTP + WebSocket portu |
 | `DATA_DIR` | `./data` | Oyuncu kayıtlarının tutulduğu klasör |
+| `CORS_ORIGIN` | `*` | Başka adresteki istemcilerin (ör. GitHub Pages) bağlanmasına izin verilen köken |
 
 ### Docker
 
@@ -59,7 +60,19 @@ docker build -t solaria .
 docker run -p 3000:3000 -v solaria-data:/app/data solaria
 ```
 
-### İnternette yayınlama
+### GitHub Pages (tek oyunculu, sunucusuz)
+
+**Canlı:** https://rodinyamert48.github.io/Solaria/
+
+GitHub Pages yalnızca statik dosya sunduğu için bu sürüm oyunu **tamamen tarayıcıda** çalıştırır: simülasyon aynı
+`shared/` koduyla yürür, ilerleme tarayıcıya (`localStorage`) kaydedilir ve komşu adalarda 3 yapay zekâ oyuncu oynar.
+
+- Her push'ta `.github/workflows/pages.yml` testleri çalıştırır, `npm run build:pages` ile derler ve `gh-pages` dalına yayınlar.
+- Yerelde denemek için: `npm run build:pages`, sonra `dist/` klasörünü `/Solaria/` yolunda sunan herhangi bir statik sunucu.
+- **Online oynamak için** sunucuyu bir yere kur (aşağıya bak) ve Pages adresine `?sunucu=` ekle:
+  `https://rodinyamert48.github.io/Solaria/?sunucu=https://solaria-sunucun.onrender.com`
+
+### İnternette yayınlama (online sunucu)
 
 Oyun tek bir Node.js süreci olduğu için WebSocket destekleyen her platformda çalışır:
 

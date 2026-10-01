@@ -24,6 +24,7 @@
           Adana güneş panelleri, rüzgar türbinleri, barajlar, nükleer reaktörler ve daha fazlasını kur.
           Şehrine elektrik ver, merkezlerini büyüt, daha çok insan çek, daha çok kazan!
         </p>
+        <p id="login-mode" class="login-mode hidden"></p>
         <form id="login-form" autocomplete="off">
           <label for="login-name">Takma adın</label>
           <input id="login-name" maxlength="16" minlength="2" placeholder="ör. EnerjiKralı" required />
@@ -147,7 +148,10 @@
           <span><kbd>U</kbd> yükselt · <kbd>M</kbd> taşı · <kbd>X</kbd> sat</span>
           <span><kbd>B</kbd> santraller · <kbd>C</kbd> şehir · <kbd>H</kbd> adam</span>
         </div>
-        <button class="btn" id="help-close">Anladım</button>
+        <div class="help-actions">
+          <button class="btn" id="help-close">Anladım</button>
+          <button class="btn ghost hidden" id="help-reset">🗑️ İlerlemeyi sıfırla</button>
+        </div>
       </div>
     </div>
 

@@ -273,6 +273,23 @@ kbd {
   margin: 8px 0 0;
 }
 
+.login-mode {
+  background: rgba(94, 230, 168, 0.12);
+  border: 1px solid rgba(94, 230, 168, 0.35);
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: #d4f7e6;
+  margin: 0 0 6px;
+}
+
+.help-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
 .server-status {
   color: var(--muted);
   font-size: 0.78rem;

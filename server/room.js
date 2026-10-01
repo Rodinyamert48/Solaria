@@ -1,39 +1,15 @@
 // Oda: 6 adalık bir dünya. Oyuncuları simüle eder ve değişiklikleri yayınlar.
 import { stepPlayer, computeStats } from '../shared/economy.js';
 import { envAt } from '../shared/env.js';
+import { publicPlot, privateState, slimStats, boardRow } from '../shared/views.js';
+
+export { publicPlot, privateState };
 
 export const SLOTS_PER_ROOM = 6;
 const TICK_MS = 500;
 const BOARD_EVERY = 2; // her 2 tick'te bir liderlik tablosu
 
 let roomCounter = 0;
-
-export function publicPlot(p, slot) {
-  return {
-    id: p.id,
-    slot,
-    name: p.name,
-    color: p.color,
-    land: p.land,
-    centers: p.centers,
-    generators: p.generators,
-    pop: Math.floor(p.pop),
-    rebirths: p.rebirths,
-  };
-}
-
-export function privateState(p) {
-  return {
-    money: p.money,
-    lifetime: p.lifetime,
-    runEarned: p.runEarned,
-    rebirths: p.rebirths,
-    bestCity: p.bestCity,
-    pop: p.pop,
-    land: p.land,
-    centers: p.centers,
-  };
-}
 
 export class Room {
   constructor(io) {
@@ -111,18 +87,7 @@ export class Room {
       s.player.lastNet = stats.net;
       s.stats = stats;
       s.socket.emit('tick', { t: now, me: privateState(s.player), stats: slimStats(stats) });
-      board.push({
-        slot: i,
-        id: s.player.id,
-        name: s.player.name,
-        color: s.player.color,
-        pop: Math.floor(s.player.pop),
-        net: stats.net,
-        supply: stats.supply,
-        coverage: stats.coverage,
-        cityLevel: stats.cityLevel,
-        rebirths: s.player.rebirths,
-      });
+      board.push(boardRow(s.player, i, stats));
     }
     if (this.tickCount % BOARD_EVERY === 0 && board.length) this.io.to(this.id).emit('board', board);
   }
@@ -138,26 +103,4 @@ export class Room {
   destroy() {
     clearInterval(this.timer);
   }
-}
-
-function slimStats(s) {
-  return {
-    supply: s.supply,
-    rated: s.rated,
-    demand: s.demand,
-    served: s.served,
-    coverage: s.coverage,
-    wasted: s.wasted,
-    capacity: s.capacity,
-    perCapita: s.perCapita,
-    price: s.price,
-    income: s.income,
-    upkeep: s.upkeep,
-    net: s.net,
-    airQuality: s.airQuality,
-    pollutionShare: s.pollutionShare,
-    growth: s.growth,
-    byCat: s.byCat,
-    cityLevel: s.cityLevel,
-  };
 }

@@ -20,7 +20,11 @@ const SAVE_EVERY_MS = 30_000;
 const store = new Store(DATA_DIR);
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { maxHttpBufferSize: 64 * 1024 });
+// CORS: GitHub Pages gibi başka bir adreste duran istemci de bağlanabilsin (?sunucu=...)
+const io = new Server(server, {
+  maxHttpBufferSize: 64 * 1024,
+  cors: { origin: process.env.CORS_ORIGIN || '*' },
+});
 
 /** @type {Room[]} */
 const rooms = [];

@@ -131,7 +131,7 @@ export class CityPanel {
   renderBoard(state) {
     const list = $('#city-board');
     list.innerHTML = '';
-    list.append(h('div', { class: 'section-title' }, `Bu sunucu (${state.roomId || ''})`));
+    list.append(h('div', { class: 'section-title' }, state.roomId === 'yerel' ? 'Sen ve komşuların' : `Bu sunucu (${state.roomId || ''})`));
     const rows = [...state.board].sort((a, b) => b.net - a.net);
     rows.forEach((r, i) => {
       list.append(
@@ -149,7 +149,7 @@ export class CityPanel {
         ),
       );
     });
-    list.append(h('div', { class: 'section-title' }, 'Tüm zamanların en iyileri'));
+    list.append(h('div', { class: 'section-title' }, state.roomId === 'yerel' ? 'Toplam kazanç sıralaması' : 'Tüm zamanların en iyileri'));
     (state.top || []).forEach((r, i) => {
       list.append(
         h(

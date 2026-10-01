@@ -3,9 +3,11 @@ import path from 'node:path';
 
 const SERVER = `http://localhost:${process.env.PORT || 3000}`;
 
-export default defineConfig({
+// `vite build --mode pages` -> GitHub Pages: depo adı alt klasörü ve tarayıcı içi tek oyunculu mod (client/.env.pages)
+export default defineConfig(({ mode }) => ({
   root: 'client',
   publicDir: 'public',
+  base: process.env.BASE_PATH || (mode === 'pages' ? '/Solaria/' : '/'),
   resolve: {
     alias: { '@shared': path.resolve(import.meta.dirname, 'shared') },
   },
@@ -25,4 +27,4 @@ export default defineConfig({
       output: { manualChunks: (id) => (id.includes('@babylonjs') ? 'babylon' : undefined) },
     },
   },
-});
+}));

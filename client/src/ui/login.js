@@ -1,11 +1,29 @@
 // Giriş ekranı
-import { $, h } from './dom.js';
+import { $, h, confirmButton } from './dom.js';
 import { loadAccount } from '../net.js';
 
 const COLORS = ['#ff6b6b', '#ffb347', '#ffd93d', '#6bcB77', '#4fb3ff', '#7c6cff', '#d36bff', '#ff7ab6', '#3fd0c9', '#f4f1ea'];
 
+const PROFILE_KEY = 'solaria.profile';
+
+function loadProfile() {
+  try {
+    return JSON.parse(localStorage.getItem(PROFILE_KEY)) || loadAccount();
+  } catch {
+    return null;
+  }
+}
+
+function saveProfile(profile) {
+  try {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  } catch {
+    /* yok say */
+  }
+}
+
 export function setupLogin(onSubmit) {
-  const acc = loadAccount();
+  const acc = loadProfile();
   let color = acc?.color || COLORS[Math.floor(Math.random() * COLORS.length)];
   const swatches = $('#login-colors');
   const draw = () => {
@@ -40,7 +58,9 @@ export function setupLogin(onSubmit) {
     }
     $('#login-btn').disabled = true;
     $('#login-error').textContent = '';
-    const res = await onSubmit({ name, color: color.toLowerCase() });
+    const profile = { name, color: color.toLowerCase() };
+    saveProfile(profile);
+    const res = await onSubmit(profile);
     $('#login-btn').disabled = false;
     if (!res.ok) $('#login-error').textContent = res.error || 'Giriş başarısız';
   });
@@ -50,6 +70,16 @@ export function setServerStatus(text) {
   $('#server-status').textContent = text;
 }
 
+export function setLoginMode(html) {
+  const el = $('#login-mode');
+  el.innerHTML = html;
+  el.classList.toggle('hidden', !html);
+}
+
 export function hideLogin() {
   $('#login').classList.add('hidden');
+}
+
+export function confirmReset(btn, onConfirm) {
+  confirmButton(btn, 'Emin misin? Her şey silinir!', onConfirm);
 }

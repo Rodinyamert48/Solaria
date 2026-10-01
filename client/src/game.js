@@ -5,9 +5,9 @@ import { Shop } from './ui/shop.js';
 import { CityPanel } from './ui/citypanel.js';
 import { Inspector } from './ui/inspector.js';
 import { Chat } from './ui/chat.js';
-import { setupLogin, setServerStatus, hideLogin } from './ui/login.js';
+import { setupLogin, setServerStatus, setLoginMode, hideLogin, confirmReset } from './ui/login.js';
 import { World } from './render/world.js';
-import { Net } from './net.js';
+import { createConnection } from './connection.js';
 import { sfx } from './sfx.js';
 import { GENERATOR_BY_ID, GENERATORS } from '@shared/data/generators.js';
 import { CATEGORIES } from '@shared/data/categories.js';
@@ -36,7 +36,7 @@ export class Game {
 
     this.world = new World(canvas);
     this.world.setTimeSource(() => Date.now() + this.state.serverOffset);
-    this.net = new Net();
+    this.net = createConnection();
     this.hud = new Hud();
     this.shop = new Shop(this);
     this.city = new CityPanel(this);
@@ -144,8 +144,15 @@ export class Game {
 
   bindNet() {
     const st = this.state;
+    if (this.net.local) {
+      setLoginMode(
+        '🎮 <b>Tek oyunculu mod</b> — ilerlemen bu tarayıcıda kaydedilir. Komşu adalarda yapay zekâ oyuncular var.',
+      );
+    } else if (this.net.url) {
+      setLoginMode(`🌐 <b>Online mod</b> — sunucu: ${this.net.url.replace(/[<>&"]/g, '')}`);
+    }
     this.net.on('connect', async () => {
-      setServerStatus('Sunucu hazır ✓');
+      setServerStatus(this.net.local ? 'Hazır ✓' : 'Sunucu hazır ✓');
       if (this.wasJoined && this.net.profile) {
         const res = await this.net.join(this.net.profile);
         if (res.ok) {
@@ -486,6 +493,14 @@ export class Game {
     $('#btn-home').addEventListener('click', () => this.world.focusSlot(this.state.slot, 21));
     $('#btn-help').addEventListener('click', () => $('#help').classList.remove('hidden'));
     $('#help-close').addEventListener('click', () => $('#help').classList.add('hidden'));
+    if (this.net.local) {
+      const reset = $('#help-reset');
+      reset.classList.remove('hidden');
+      confirmReset(reset, () => {
+        this.net.reset();
+        location.reload();
+      });
+    }
     const sound = $('#btn-sound');
     sound.textContent = sfx.muted ? '🔇' : '🔊';
     sound.addEventListener('click', () => (sound.textContent = sfx.toggle() ? '🔇' : '🔊'));
