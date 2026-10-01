@@ -10,7 +10,7 @@ import { IsoCamera } from './camera.js';
 import { Island, slotPosition } from './island.js';
 import { EnergyFlow } from './effects.js';
 import { glowMaterial, buildTemplate } from './kit.js';
-import { G, C } from './models/palette.js';
+import { G } from './models/palette.js';
 
 const lerp = (a, b, t) => a + (b - a) * t;
 const smooth = (a, b, x) => {
@@ -287,6 +287,9 @@ export class World {
   }
 
   focusSlot(slot, zoom) {
+    // Dikey (telefon) ekranlarda adanın tamamı sığsın diye uzaklaş
+    const aspect = this.canvas.clientWidth / Math.max(1, this.canvas.clientHeight);
+    if (zoom && aspect < 1) zoom = Math.min(60, zoom * Math.max(1, 0.85 / aspect));
     this.cam.focus(slotPosition(slot), zoom);
   }
 
@@ -446,10 +449,8 @@ export class World {
 
     // Gökyüzü
     const dusk = 1 - smooth(0, 0.35, Math.abs(h));
-    const base = day > 0.5 ? SKY.day : SKY.night;
     const top = mix(mix(SKY.night[0], SKY.day[0], day), SKY.dusk[0], dusk * 0.6);
     const bottom = mix(mix(SKY.night[1], SKY.day[1], day), SKY.dusk[1], dusk * 0.8);
-    void base;
     this.drawSky(top, bottom);
     this.starLayer.color = new Color4(1, 1, 1, smooth(0.5, 1, night));
 
@@ -498,5 +499,3 @@ export class World {
     this.emit('frame', dt);
   }
 }
-
-export { C };

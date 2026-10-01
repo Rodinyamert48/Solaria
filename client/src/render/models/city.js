@@ -1,6 +1,6 @@
 // Şehir binaları, merkez simgeleri (landmark), belediye binası ve arabalar
 import { C, G } from './palette.js';
-import { PI, building, tree, chimney, coolingTower, beacon, fan } from './helpers.js';
+import { PI, building, tree, chimney, beacon } from './helpers.js';
 
 export const FLOOR_H = 0.2;
 export const TOWER_FLOORS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32];
@@ -151,5 +151,3 @@ export function crownModel(k) {
   const g = k.group(0, 0, 0, { type: 'spin', axis: 'y', speed: 1.2 });
   g.torus(1.1, 0.04, G.sun, { glow: true, tess: 20 });
 }
-
-export { coolingTower, fan };

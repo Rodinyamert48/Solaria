@@ -3,11 +3,8 @@ import {
   TransformNode, StandardMaterial, DynamicTexture, Color3, Vector3, Mesh, CreateGround, CreatePlane,
 } from './babylon.js';
 import { GENERATOR_BY_ID } from '@shared/data/generators.js';
-import { CATEGORY_BY_ID } from '@shared/data/categories.js';
 import { cityLevelName } from '@shared/economy.js';
-import {
-  ISLAND_SIZE, CITY_MIN, CITY_MAX, isCityTile, isUnlocked, tileDistance, MAX_LAND_LEVEL,
-} from '@shared/grid.js';
+import { ISLAND_SIZE, CITY_MIN, CITY_MAX, isCityTile, isUnlocked, MAX_LAND_LEVEL } from '@shared/grid.js';
 import { BALANCE } from '@shared/balance.js';
 import { City } from './city.js';
 import { IslandEffects } from './effects.js';
@@ -304,11 +301,6 @@ export class Island {
     this.label.setEnabled(v);
   }
 
-  // Bölüm başına güç dağılımı (enerji akışı için)
-  producingGenerators() {
-    return [...this.gens.values()].filter((e) => CATEGORY_BY_ID[e.def.cat]);
-  }
-
   dispose() {
     for (const gid of [...this.gens.keys()]) this.removeGen(gid);
     for (const d of this.decor) this.world.disposeInstance(d);
@@ -332,5 +324,3 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
 }
-
-export { tileDistance };

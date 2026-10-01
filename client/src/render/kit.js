@@ -4,7 +4,7 @@
 // gruplarda (dönen kanat, sallanan pompa...). Sonuç bir "şablon"dur: her yerleştirmede instance oluşturulur
 // (aynı modelden yüzlerce tane çizmek tek draw call).
 import {
-  Mesh, TransformNode, Vector3, Color3, Color4, StandardMaterial, VertexBuffer,
+  Mesh, TransformNode, Vector3, Color3, StandardMaterial, VertexBuffer,
   CreateBox, CreateCylinder, CreateSphere, CreateTorus, CreateLathe, CreateIcoSphere, CreateTorusKnot,
 } from './babylon.js';
 
@@ -274,5 +274,3 @@ export class Template {
     return root;
   }
 }
-
-export { Color4 };

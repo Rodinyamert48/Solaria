@@ -875,6 +875,17 @@ kbd {
   color: var(--danger);
 }
 
+.hint-cancel {
+  margin-left: 10px;
+  border: none;
+  background: var(--bg-3);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 0.75rem;
+  vertical-align: middle;
+}
+
 /* ---------- Sohbet ---------- */
 #chat {
   position: fixed;
@@ -1086,9 +1097,19 @@ kbd {
     gap: 6px;
     flex-wrap: wrap;
     justify-content: center;
+    width: calc(100vw - 16px);
   }
   .hud-group {
-    padding: 6px 10px;
+    padding: 5px 9px;
+    gap: 7px;
+    border-radius: 12px;
+  }
+  .hud-sub {
+    font-size: 0.68rem;
+  }
+  .power-labels {
+    white-space: nowrap;
+    font-size: 0.7rem;
   }
   .hud-icon {
     font-size: 1.15rem;
@@ -1117,9 +1138,9 @@ kbd {
     top: auto;
     left: 8px;
     right: 8px;
-    bottom: 8px;
+    bottom: 72px;
     width: auto;
-    height: 52vh;
+    height: 50vh;
   }
   .fab {
     top: auto;
@@ -1127,6 +1148,14 @@ kbd {
   }
   #inspector {
     bottom: 70px;
+  }
+  #build-hint {
+    bottom: 72px;
+    white-space: normal;
+    width: calc(100vw - 24px);
+    text-align: center;
+    border-radius: 16px;
+    font-size: 0.8rem;
   }
   #toasts {
     top: 130px;

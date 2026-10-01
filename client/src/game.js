@@ -179,11 +179,12 @@ export class Game {
         plot.pop = me.pop;
         this.world.setPop(st.slot, me.pop);
       }
+      // Sadece bu turda ilk kez ulaşılan seviyeleri kutla (gece-gündüz dalgalanmasında tekrar etmesin)
       if (this.prevCityLevel != null && stats.cityLevel > this.prevCityLevel) {
         toast(`🎉 Şehrin büyüdü: artık bir ${CITY_LEVELS[stats.cityLevel].name}!`, 'gold', 4);
         sfx.levelUp();
       }
-      this.prevCityLevel = stats.cityLevel;
+      this.prevCityLevel = Math.max(this.prevCityLevel ?? stats.cityLevel, stats.cityLevel, me.bestCity || 0);
       this.hud.update(st);
       this.hud.updateAir(stats);
       this.world.lastCoverage = stats.coverage;
@@ -277,6 +278,8 @@ export class Game {
     }
     if (info.button !== 0) return;
     if (this.buildType) {
+      // Dokunmatik ekranda "hover" yok: tıklanan noktaya göre yeniden hesapla
+      if (info.island) this.onHover(info);
       if (!this.ghostPos) return;
       if (this.ghostPos.err) {
         sfx.error();
@@ -330,6 +333,12 @@ export class Game {
       span.textContent = ` · ${err}`;
       el.append(span);
     }
+    const cancel = document.createElement('button');
+    cancel.className = 'hint-cancel';
+    cancel.textContent = '✕';
+    cancel.title = 'İptal (Esc)';
+    cancel.addEventListener('click', () => this.cancelBuild());
+    el.append(cancel);
   }
 
   startBuild(type, moveGid = null) {
