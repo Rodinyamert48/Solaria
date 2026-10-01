@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="theme-color" content="#121a33" />
+    <title>Solaria — Şehre Güç Ver</title>
+    <meta name="description" content="Çok oyunculu izometrik enerji ve şehir kurma oyunu. Santraller kur, şehrini büyüt!" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☀️</text></svg>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <canvas id="game" touch-action="none"></canvas>
+
+    <!-- Giriş ekranı -->
+    <div id="login" class="overlay">
+      <div class="login-card">
+        <div class="logo">☀️</div>
+        <h1>Solaria</h1>
+        <p class="tagline">Şehre Güç Ver</p>
+        <p class="intro">
+          Adana güneş panelleri, rüzgar türbinleri, barajlar, nükleer reaktörler ve daha fazlasını kur.
+          Şehrine elektrik ver, merkezlerini büyüt, daha çok insan çek, daha çok kazan!
+        </p>
+        <form id="login-form" autocomplete="off">
+          <label for="login-name">Takma adın</label>
+          <input id="login-name" maxlength="16" minlength="2" placeholder="ör. EnerjiKralı" required />
+          <label>Ada rengin</label>
+          <div id="login-colors" class="swatches"></div>
+          <button type="submit" class="btn btn-big" id="login-btn">Oyna ▶</button>
+          <p id="login-error" class="error"></p>
+        </form>
+        <p class="server-status" id="server-status">Sunucuya bağlanılıyor…</p>
+      </div>
+    </div>
+
+    <!-- Üst bilgi çubuğu -->
+    <header id="hud" class="hidden">
+      <div class="hud-group hud-money">
+        <span class="hud-icon">💰</span>
+        <div>
+          <div class="hud-value" id="hud-money">$0</div>
+          <div class="hud-sub" id="hud-net">+$0/sn</div>
+        </div>
+      </div>
+      <div class="hud-group hud-pop">
+        <span class="hud-icon">👥</span>
+        <div>
+          <div class="hud-value" id="hud-pop">0</div>
+          <div class="hud-sub" id="hud-cap">kapasite 0</div>
+        </div>
+        <span class="badge" id="hud-level">Köy</span>
+      </div>
+      <div class="hud-group hud-power">
+        <span class="hud-icon">⚡</span>
+        <div class="power-col">
+          <div class="power-labels">
+            <span>Arz <b id="hud-supply">0 kW</b></span>
+            <span>Talep <b id="hud-demand">0 kW</b></span>
+          </div>
+          <div class="power-bar"><div id="hud-power-fill"></div><div id="hud-power-over"></div></div>
+          <div class="hud-sub" id="hud-power-note">—</div>
+        </div>
+      </div>
+      <div class="hud-group hud-env">
+        <span id="hud-clock">🕒 12:00</span>
+        <span id="hud-sun" title="Güneş verimi">☀️ 100%</span>
+        <span id="hud-wind" title="Rüzgar şiddeti">🌬️ 100%</span>
+        <span id="hud-air" title="Hava kalitesi">🍃 100%</span>
+      </div>
+      <div class="hud-actions">
+        <button class="icon-btn" id="btn-home" title="Adama dön (H)">🏝️</button>
+        <button class="icon-btn" id="btn-sound" title="Ses">🔊</button>
+        <button class="icon-btn" id="btn-help" title="Yardım">❔</button>
+      </div>
+    </header>
+
+    <!-- Mağaza (sol) -->
+    <aside id="shop" class="panel side-left hidden">
+      <div class="panel-head">
+        <h2>⚡ Santraller</h2>
+        <button class="icon-btn small collapse" data-target="shop" title="Gizle (B)">⟨</button>
+      </div>
+      <div id="shop-tabs" class="tabs"></div>
+      <div id="shop-cat-desc" class="cat-desc"></div>
+      <div id="shop-list" class="card-list"></div>
+    </aside>
+
+    <!-- Şehir paneli (sağ) -->
+    <aside id="citypanel" class="panel side-right hidden">
+      <div class="panel-head">
+        <h2>🏙️ Şehir</h2>
+        <button class="icon-btn small collapse" data-target="citypanel" title="Gizle (C)">⟩</button>
+      </div>
+      <div class="tabs" id="city-tabs">
+        <button class="tab active" data-tab="centers">Merkezler</button>
+        <button class="tab" data-tab="board">Liderlik</button>
+        <button class="tab" data-tab="stats">İstatistik</button>
+      </div>
+      <div id="city-centers" class="card-list"></div>
+      <div id="city-board" class="card-list hidden"></div>
+      <div id="city-stats" class="card-list hidden"></div>
+    </aside>
+
+    <!-- Panel açma düğmeleri (gizliyken / mobil) -->
+    <button id="open-shop" class="fab fab-left hidden" title="Santraller (B)">⚡</button>
+    <button id="open-city" class="fab fab-right hidden" title="Şehir (C)">🏙️</button>
+
+    <!-- Seçili yapı -->
+    <div id="inspector" class="panel hidden"></div>
+
+    <!-- İnşa ipucu -->
+    <div id="build-hint" class="hidden"></div>
+
+    <!-- Sohbet -->
+    <div id="chat" class="panel hidden">
+      <div id="chat-log"></div>
+      <form id="chat-form" autocomplete="off">
+        <input id="chat-input" maxlength="140" placeholder="Mesaj yaz… (Enter)" />
+      </form>
+    </div>
+
+    <div id="toasts"></div>
+
+    <!-- Yardım -->
+    <div id="help" class="overlay hidden">
+      <div class="help-card panel">
+        <h2>Nasıl oynanır?</h2>
+        <ol>
+          <li><b>Santral kur:</b> Soldaki listeden bir santral seç, adanda boş bir yere tıkla.</li>
+          <li><b>Para kazan:</b> Şehre verdiğin her kW elektrik saniyede para kazandırır.</li>
+          <li><b>Şehri büyüt:</b> Sağdaki merkezleri yükselt → daha çok insan gelir → daha çok talep → daha çok gelir.</li>
+          <li><b>Dengeyi koru:</b> Arz talepten azsa karartma olur ve insanlar şehri terk eder. Fazla elektrik boşa gider.</li>
+          <li><b>Gece & rüzgar:</b> Güneş geceleri üretmez, rüzgar sürekli değişir. Karışık bir şebeke kur!</li>
+          <li><b>Kirlilik:</b> Kömür/petrol/gaz ucuz ve güçlüdür ama havayı kirletir ve yakıt parası yer. Parklar yardımcı olur.</li>
+          <li><b>Yer açmak için:</b> Eski santralleri sat (yüzde 50 iade) veya yükselt; arazi satın al.</li>
+          <li><b>Yeniden doğuş:</b> Metropol'e ulaşınca baştan başla ama kalıcı gelir çarpanı kazan.</li>
+        </ol>
+        <h3>Kontroller</h3>
+        <div class="keys">
+          <span><kbd>Sol sürükle</kbd> / <kbd>WASD</kbd> kaydır</span>
+          <span><kbd>Sağ sürükle</kbd> / <kbd>Q</kbd><kbd>E</kbd> döndür</span>
+          <span><kbd>Tekerlek</kbd> yakınlaştır</span>
+          <span><kbd>Esc</kbd> / <kbd>Sağ tık</kbd> iptal</span>
+          <span><kbd>U</kbd> yükselt · <kbd>X</kbd> sat</span>
+          <span><kbd>B</kbd> santraller · <kbd>C</kbd> şehir · <kbd>H</kbd> adam</span>
+        </div>
+        <button class="btn" id="help-close">Anladım</button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

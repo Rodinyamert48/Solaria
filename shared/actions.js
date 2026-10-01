@@ -15,13 +15,17 @@ export function newPlayerState({ id, name, color }) {
     lifetime: 0,
     runEarned: 0,
     rebirths: 0,
-    pop: 10,
+    pop: 3,
     bestCity: 0,
     land: 0,
     centers: emptyCenters(),
-    // Başlangıç hediyesi: bir güneş paneli
-    generators: [{ gid: 1, type: 'solar_panel', x: 14, y: 8, level: 1 }],
-    nextGid: 2,
+    // Başlangıç hediyesi: iki güneş paneli ve bir mini türbin
+    generators: [
+      { gid: 1, type: 'solar_panel', x: 14, y: 8, level: 1 },
+      { gid: 2, type: 'solar_panel', x: 15, y: 8, level: 1 },
+      { gid: 3, type: 'wind_mini', x: 16, y: 8, level: 1 },
+    ],
+    nextGid: 4,
     createdAt: now,
     lastSeen: now,
     lastNet: 0,

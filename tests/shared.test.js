@@ -43,6 +43,7 @@ test('yerleştirme kuralları', () => {
   assert.equal(placementError(p.generators, 0, 'solar_panel', 0, 0), 'Bu arazi henüz satın alınmadı');
   assert.equal(placementError(p.generators, 3, 'solar_panel', 0, 0), null);
   assert.equal(placementError(p.generators, 0, 'solar_panel', 14, 8), 'Burada başka bir yapı var');
+  assert.equal(placementError(p.generators, 0, 'solar_panel', 16, 8), 'Burada başka bir yapı var');
   assert.equal(placementError(p.generators, 3, 'solar_farm', 29, 0), 'Adanın dışına taşıyor');
   assert.equal(placementError(p.generators, 0, 'solar_panel', 1.5, 8), 'Geçersiz konum');
   assert.ok(buildableTileCount(1) > buildableTileCount(0));
@@ -67,7 +68,7 @@ test('inşa, yükselt, sat', () => {
   const sold = A.sell(p, { gid: r.gen.gid });
   assert.ok(sold.ok);
   assert.equal(sold.value, sellValue(GENERATOR_BY_ID.wind_mini, 2));
-  assert.equal(p.generators.length, 1);
+  assert.equal(p.generators.length, 3);
 });
 
 test('para yetmezse satın alınamaz', () => {
@@ -88,7 +89,7 @@ test('kilitli merkez açılmaz', () => {
 
 test('gelir = karşılanan talep × fiyat', () => {
   const p = fresh();
-  p.pop = 1; // talep 1 kW, panel gündüz ~1,9 kW
+  p.pop = 1; // talep 1 kW, başlangıç santralleri gündüz ~5 kW
   const s = computeStats(p, DAY);
   assert.equal(s.served, 1);
   assert.equal(s.income, 1);
@@ -97,6 +98,7 @@ test('gelir = karşılanan talep × fiyat', () => {
 
 test('gece güneş üretimi düşer, nüfus azalır', () => {
   const p = fresh();
+  p.generators = [{ gid: 1, type: 'solar_panel', x: 14, y: 8, level: 1 }];
   p.pop = 1.5;
   const day = computeStats(p, DAY);
   const night = computeStats(p, NIGHT);
