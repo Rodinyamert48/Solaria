@@ -1,5 +1,7 @@
 import { niceRound } from './generators.js';
 
+const dec = (v) => v.toFixed(2).replace('.', ',');
+
 // Şehir seviyeleri (nüfus eşikleri)
 export const CITY_LEVELS = [
   { name: 'Köy', pop: 0 },
@@ -35,21 +37,21 @@ export const CENTERS = [
     baseCost: 150, costGrowth: 2.8,
     desc: 'Mağazalar ve ofisler elektriği daha pahalıya alır.',
     effect: (L) => 1 + 0.12 * L,
-    text: (v) => `Elektrik fiyatı ×${v.toFixed(2)}`,
+    text: (v) => `Elektrik fiyatı: ×${dec(v)}`,
   },
   {
     id: 'park', name: 'Park & Yeşil Alan', icon: '🌳', unlock: 0,
     baseCost: 80, costGrowth: 2.3,
     desc: 'Ağaçlar kirliliği emer. Fosil santrallerin zararını azaltır.',
     effect: (L) => 1 - 0.88 ** L,
-    text: (v) => `Kirlilik etkisi −%${Math.round(v * 100)}`,
+    text: (v) => `Kirlilik etkisi: −%${Math.round(v * 100)}`,
   },
   {
     id: 'industry', name: 'Sanayi Merkezi', icon: '🏭', unlock: 1,
     baseCost: 600, costGrowth: 2.5,
     desc: 'Fabrikalar kişi başına çok daha fazla elektrik tüketir (ve öder).',
     effect: (L) => 1 + 0.1 * L,
-    text: (v) => `Kişi başı talep ×${v.toFixed(2)}`,
+    text: (v) => `Kişi başı talep: ×${dec(v)}`,
   },
   {
     id: 'health', name: 'Sağlık Merkezi', icon: '🏥', unlock: 1,
@@ -63,14 +65,14 @@ export const CENTERS = [
     baseCost: 4_000, costGrowth: 2.9,
     desc: 'Mühendisler tüm santrallerinin verimini artırır.',
     effect: (L) => 1 + 0.05 * L,
-    text: (v) => `Tüm jeneratör gücü ×${v.toFixed(2)}`,
+    text: (v) => `Tüm santral gücü: ×${dec(v)}`,
   },
   {
     id: 'entertainment', name: 'Eğlence Merkezi', icon: '🏟️', unlock: 2,
     baseCost: 3_000, costGrowth: 2.6,
     desc: 'Stadyumlar ve konser alanları uzaklardan insan çeker.',
     effect: (L) => 1 + 0.12 * L,
-    text: (v) => `Nüfus kapasitesi ×${v.toFixed(2)}`,
+    text: (v) => `Nüfus kapasitesi: ×${dec(v)}`,
   },
   {
     id: 'transport', name: 'Ulaşım Merkezi', icon: '✈️', unlock: 3,

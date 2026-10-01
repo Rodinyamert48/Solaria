@@ -7,6 +7,12 @@ Adana santraller kur, şehrine elektrik ver, merkezlerini büyüt, daha çok ins
 - 🧱 Motor: **Babylon.js** (render) · **Socket.IO** (gerçek zamanlı sunucu) · **Vite** (paketleme)
 - 📋 Tasarım ve yol haritası: [PLAN.md](PLAN.md)
 
+![Oyun içi görünüm](docs/screenshots/oyun.jpg)
+
+| Gece: pencereler yanar, enerji şehre akar | Vitrin: 63 santralin tamamı |
+|---|---|
+| ![Gece](docs/screenshots/oyun-gece.jpg) | ![Vitrin](docs/screenshots/vitrin.jpg) |
+
 ## Özellikler
 
 - **10 enerji kategorisi, 63 santral:** Güneş, Rüzgar, Hidro, Biyokütle, Kömür, Petrol, Doğalgaz, Jeotermal,

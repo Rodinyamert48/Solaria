@@ -99,7 +99,8 @@ export class CityPanel {
       const locked = lvlIdx < c.unlock;
       level.textContent = L > 0 ? `Sv. ${L}` : '';
       effect.innerHTML = '';
-      effect.append(c.text(c.effect(L)), h('span', { class: 'next' }, ` → ${c.text(c.effect(L + 1)).replace(/^[^:]*:\s*/, '')}`));
+      const next = c.text(c.effect(L + 1));
+      effect.append(c.text(c.effect(L)), h('div', { class: 'next' }, `Sonraki: ${next.includes(':') ? next.split(':')[1].trim() : next}`));
       lock.textContent = locked ? `🔒 ${CITY_LEVELS[c.unlock].name} seviyesinde açılır` : '';
       el.classList.toggle('locked', locked);
       btn.disabled = locked || money < cost;
