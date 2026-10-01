@@ -845,6 +845,10 @@ kbd {
   flex: 1;
 }
 
+.insp-actions .btn.ghost {
+  flex: 0 0 auto;
+}
+
 .insp-close {
   margin-left: auto;
 }

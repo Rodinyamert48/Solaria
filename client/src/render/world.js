@@ -40,6 +40,7 @@ export class World {
     this.templates = new Templates(scene);
     this.islands = new Map();
     this.anims = new Set();
+    this.tweens = [];
     this.mySlot = -1;
     this.timeFn = () => Date.now();
     this.time = 0;
@@ -222,6 +223,29 @@ export class World {
     };
     walk(inst.root);
     inst.root.freezeWorldMatrix();
+  }
+
+  // Ölçek animasyonu (geri yaylanan "pop" efekti)
+  tween(node, target, duration, onDone) {
+    this.tweens.push({ node, from: node.scaling.x, target, t: 0, duration, onDone });
+  }
+
+  updateTweens(dt) {
+    for (let i = this.tweens.length - 1; i >= 0; i--) {
+      const tw = this.tweens[i];
+      if (tw.node.isDisposed()) {
+        this.tweens.splice(i, 1);
+        continue;
+      }
+      tw.t = Math.min(1, tw.t + dt / tw.duration);
+      const x = tw.t;
+      const back = 1 + 2.2 * (x - 1) ** 3 + 1.2 * (x - 1) ** 2; // easeOutBack
+      tw.node.scaling.setAll(tw.from + (tw.target - tw.from) * back);
+      if (tw.t >= 1) {
+        this.tweens.splice(i, 1);
+        tw.onDone?.();
+      }
+    }
   }
 
   unfreeze(inst) {
@@ -464,6 +488,7 @@ export class World {
         }
       }
     }
+    this.updateTweens(dt);
     for (const island of this.islands.values()) island.city.animate(dt);
     for (const c of this.clouds) {
       c.node.position.x += c.speed * dt;

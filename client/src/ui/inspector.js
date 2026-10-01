@@ -84,6 +84,7 @@ export class Inspector {
           'div',
           { class: 'insp-actions' },
           upBtn,
+          h('button', { class: 'btn ghost', title: 'Taşı (M)', onclick: () => this.game.startMove() }, '↔️'),
           h('button', { class: 'btn red', onclick: () => this.game.sellSelected() }, `💰 Sat ${formatMoney(sellValue(def, g.level))}`),
         ),
       );

@@ -110,7 +110,7 @@ export class City {
     inst.root.position.set(x, opts.y ?? 0, z);
     if (opts.scale) inst.root.scaling.set(opts.scale[0], opts.scale[1], opts.scale[2]);
     if (opts.rot) inst.root.rotation.y = opts.rot;
-    this.world.registerInstance(inst);
+    this.world.registerInstance(inst, { freeze: true });
     this.items.push(inst);
     return inst;
   }

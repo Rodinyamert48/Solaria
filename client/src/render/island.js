@@ -43,7 +43,7 @@ export class Island {
     this.seed = slot * 7919 + 13;
 
     this.body = world.templates.get('island').instantiate(this.root);
-    world.registerInstance(this.body, { receive: true });
+    world.registerInstance(this.body, { noShadow: true, freeze: true });
 
     // Zemin: dinamik doku ile çizilir (çim, kilitli arazi, şehir yolları)
     this.ground = CreateGround(`ground${slot}`, { width: ISLAND_SIZE, height: ISLAND_SIZE }, this.scene);
@@ -103,11 +103,12 @@ export class Island {
         if (cur) this.removeGen(g.gid);
         this.addGen(g);
       } else {
-        if (cur.g.x !== g.x || cur.g.y !== g.y || cur.g.level !== g.level) this.placeGen(cur, g);
+        if (cur.g.x !== g.x || cur.g.y !== g.y || cur.g.level !== g.level) this.placeGen(cur, g, true);
         cur.g = g;
       }
     }
     for (const gid of [...this.gens.keys()]) if (!seen.has(gid)) this.removeGen(gid);
+    this.ready = true;
     this.effects.rebuild();
     this.setPop(plot.pop);
     this.updateLabel();
@@ -124,17 +125,24 @@ export class Island {
     if (!def) return;
     const inst = this.world.templates.generator(g.type).instantiate(this.root, `gen${g.gid}`);
     this.world.registerInstance(inst, { gen: true, cat: def.cat });
-    const entry = { g, def, inst, born: performance.now() };
+    const entry = { g, def, inst };
     this.gens.set(g.gid, entry);
-    this.placeGen(entry, g);
-    this.world.onGenAdded?.(this, entry);
+    this.placeGen(entry, g, this.plot !== null && this.ready);
   }
 
-  placeGen(entry, g) {
-    const p = this.tileCenter(g.x, g.y, entry.def.size);
-    entry.inst.root.position.copyFrom(p);
+  // animate: yeni kurulan santral "büyüyerek" belirir
+  placeGen(entry, g, animate = false) {
+    const root = entry.inst.root;
+    this.world.unfreeze(entry.inst);
+    root.position.copyFrom(this.tileCenter(g.x, g.y, entry.def.size));
     const s = 1 + 0.05 * (g.level - 1);
-    entry.inst.root.scaling.setAll(s);
+    if (animate) {
+      root.scaling.setAll(0.05);
+      this.world.tween(root, s, 0.35, () => this.world.freeze(entry.inst));
+    } else {
+      root.scaling.setAll(s);
+      this.world.freeze(entry.inst);
+    }
   }
 
   removeGen(gid) {
@@ -239,7 +247,7 @@ export class Island {
         const inst = this.world.templates.get(key).instantiate(this.root);
         inst.root.position.copyFrom(this.tileCenter(x, y));
         inst.root.rotation.y = r * 40;
-        this.world.registerInstance(inst);
+        this.world.registerInstance(inst, { freeze: true });
         this.decor.push(inst);
       }
     }

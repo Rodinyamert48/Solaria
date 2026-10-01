@@ -1,0 +1,18 @@
+# Render.com Blueprint — depoyu bağlayınca otomatik kurulur
+services:
+  - type: web
+    name: solaria
+    runtime: node
+    plan: starter
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/status
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATA_DIR
+        value: /var/data
+    disk:
+      name: solaria-data
+      mountPath: /var/data
+      sizeGB: 1

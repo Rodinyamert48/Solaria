@@ -17,13 +17,13 @@
     "node": ">=20.19"
   },
   "dependencies": {
-    "@babylonjs/core": "^9.28.0",
     "express": "^5.2.1",
-    "socket.io": "^4.8.4",
-    "socket.io-client": "^4.8.4"
+    "socket.io": "^4.8.4"
   },
   "devDependencies": {
+    "@babylonjs/core": "^9.28.0",
     "concurrently": "^10.0.5",
+    "socket.io-client": "^4.8.4",
     "vite": "^8.3.1"
   }
 }

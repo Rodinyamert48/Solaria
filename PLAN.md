@@ -143,12 +143,16 @@ tests/             ekonomi ve ızgara birim testleri + denge simülasyonu
 ## 8. Yol Haritası
 
 - [x] **Faz 0 — Plan & iskelet:** bu belge, proje yapısı, npm betikleri
-- [ ] **Faz 1 — Ortak çekirdek:** 63 jeneratör, 8 merkez, ekonomi formülleri, yerleştirme kuralları, testler, denge simülasyonu
-- [ ] **Faz 2 — Sunucu:** odalar, oyuncu kimliği, eylem doğrulama, tick döngüsü, kayıt, çevrimdışı kazanç, sohbet, liderlik
-- [ ] **Faz 3 — 3D dünya:** izometrik kamera, adalar, gece/gündüz, 63 prosedürel model, şehir ve animasyonlar
-- [ ] **Faz 4 — Arayüz:** giriş ekranı, HUD, mağaza, şehir paneli, seçim paneli, sohbet, liderlik, bildirimler
-- [ ] **Faz 5 — Cilalama:** parçacık efektleri, sesler, mobil dokunmatik kontroller, performans
-- [ ] **Faz 6 — Yayın:** üretim build'i, Dockerfile, Render/Railway/Fly.io kurulum notları
+- [x] **Faz 1 — Ortak çekirdek:** 63 jeneratör, 8 merkez, ekonomi formülleri, yerleştirme kuralları, testler, denge simülasyonu
+- [x] **Faz 2 — Sunucu:** odalar, oyuncu kimliği, eylem doğrulama, tick döngüsü, kayıt, çevrimdışı kazanç, sohbet, liderlik
+- [x] **Faz 3 — 3D dünya:** izometrik kamera, adalar, gece/gündüz, 63 prosedürel model, şehir ve animasyonlar
+- [x] **Faz 4 — Arayüz:** giriş ekranı, HUD, mağaza, şehir paneli, seçim paneli, sohbet, liderlik, bildirimler
+- [x] **Faz 5 — Cilalama:** parçacık efektleri, sesler, dokunmatik kontroller, instancing + dondurma, taşıma, büyüme animasyonu
+- [x] **Faz 6 — Yayın:** üretim build'i, Dockerfile, render.yaml, kurulum notları (README)
+
+### Denge (bot simülasyonu, `npm run balance`)
+Kusursuz oynayan bot: Kasaba ~2 dk · İlçe ~5 dk · Şehir ~9 dk · Büyük Şehir ~15 dk · Metropol / ilk yeniden doğuş ~31 dk ·
+Gezegen Başkenti ~3,5 sa. Gerçek oyuncular için bu sürelerin kabaca 2-3 katı beklenir.
 
 ### Sonraki fikirler (Faz 7+)
 - 🔋 Depolama kategorisi (bataryalar gece açığını kapatır)

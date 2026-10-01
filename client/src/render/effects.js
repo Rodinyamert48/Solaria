@@ -88,13 +88,15 @@ export class IslandEffects {
   rebuild() {
     const scene = this.world.scene;
     const byKind = {};
+    const origin = this.island.root.position;
     for (const e of this.island.gens.values()) {
       const tpl = this.world.templates.generator(e.g.type);
       if (!tpl.emitters.length) continue;
-      e.inst.root.computeWorldMatrix(true);
-      const m = e.inst.root.getWorldMatrix();
+      // Hedef dönüşümden hesapla (yeni santral henüz büyüme animasyonunda olabilir)
+      const base = this.island.tileCenter(e.g.x, e.g.y, e.def.size).addInPlace(origin);
+      const s = 1 + 0.05 * (e.g.level - 1);
       for (const em of tpl.emitters) {
-        (byKind[em.type] ||= []).push(Vector3.TransformCoordinates(em.pos, m));
+        (byKind[em.type] ||= []).push(base.add(em.pos.scale(s)));
       }
     }
     for (const kind of Object.keys(KINDS)) {

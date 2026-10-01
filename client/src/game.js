@@ -262,8 +262,8 @@ export class Game {
     const def = GENERATOR_BY_ID[this.buildType];
     const x = Math.round(info.fx - def.size / 2);
     const y = Math.round(info.fy - def.size / 2);
-    let err = placementError(plot.generators, plot.land, def.id, x, y);
-    if (!err && st.displayMoney < def.cost) err = 'Yeterli paran yok';
+    let err = placementError(plot.generators, plot.land, def.id, x, y, this.moveGid);
+    if (!err && this.moveGid == null && st.displayMoney < def.cost) err = 'Yeterli paran yok';
     this.ghostPos = { x, y, err };
     this.world.updateGhost(st.slot, x, y, !err);
     this.setHint(err);
@@ -285,6 +285,16 @@ export class Game {
       }
       const def = GENERATOR_BY_ID[this.buildType];
       const { x, y } = this.ghostPos;
+      if (this.moveGid != null) {
+        const gid = this.moveGid;
+        const res = await this.act('move', { gid, x, y });
+        if (res.ok) {
+          sfx.build();
+          this.cancelBuild();
+          this.inspector.open(this.state.slot, gid);
+        }
+        return;
+      }
       const res = await this.act('build', { type: def.id, x, y });
       if (res.ok) {
         sfx.build();
@@ -309,7 +319,11 @@ export class Game {
     const def = GENERATOR_BY_ID[this.buildType];
     const el = $('#build-hint');
     el.innerHTML = '';
-    el.append(`🔨 ${def.name} (${formatMoney(def.cost)}) — yerleştirmek için tıkla · Esc iptal`);
+    el.append(
+      this.moveGid != null
+        ? `↔️ ${def.name} taşınıyor — yeni yerine tıkla · Esc iptal`
+        : `🔨 ${def.name} (${formatMoney(def.cost)}) — yerleştirmek için tıkla · Esc iptal`,
+    );
     if (err) {
       const span = document.createElement('span');
       span.className = 'err';
@@ -318,9 +332,10 @@ export class Game {
     }
   }
 
-  startBuild(type) {
-    if (this.buildType === type) return this.cancelBuild();
+  startBuild(type, moveGid = null) {
+    if (this.buildType === type && moveGid == null && this.moveGid == null) return this.cancelBuild();
     this.buildType = type;
+    this.moveGid = moveGid;
     this.inspector.close();
     this.world.setGhost(type);
     $('#build-hint').classList.remove('hidden');
@@ -330,8 +345,15 @@ export class Game {
     sfx.click();
   }
 
+  startMove() {
+    const cur = this.inspector.current();
+    if (!cur || cur.plot.slot !== this.state.slot) return;
+    this.startBuild(cur.g.type, cur.g.gid);
+  }
+
   cancelBuild() {
     this.buildType = null;
+    this.moveGid = null;
     this.ghostPos = null;
     this.world.setGhost(null);
     $('#build-hint').classList.add('hidden');
@@ -422,6 +444,7 @@ export class Game {
       else if (k === 'c') this.togglePanel('citypanel');
       else if (k === 'h') this.world.focusSlot(this.state.slot, 21);
       else if (k === 'u') this.upgradeSelected();
+      else if (k === 'm') this.startMove();
       else if (k === 'x' || k === 'delete') this.sellSelected();
       else if (/^[0-9]$/.test(k)) {
         const cat = CATEGORIES[(Number(k) + 9) % 10];
