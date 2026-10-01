@@ -46,3 +46,9 @@ export function formatDuration(seconds) {
   const h = Math.floor(m / 60);
   return `${h} sa ${m % 60} dk`;
 }
+
+// Enerji: kW·sn -> oyun saati cinsinden kWh (1 oyun saati = 15 sn)
+export function formatEnergy(kws, gameHourSeconds = 15) {
+  const kwh = kws / gameHourSeconds;
+  return formatPower(kwh).replace(/W$/, 'Wh');
+}

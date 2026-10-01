@@ -3,7 +3,7 @@ import { $, h } from './dom.js';
 import { CATEGORIES, CATEGORY_BY_ID } from '@shared/data/categories.js';
 import { generatorsOfCategory } from '@shared/data/generators.js';
 import { CENTER_BY_ID } from '@shared/data/centers.js';
-import { formatMoney, formatPower } from '@shared/format.js';
+import { formatMoney, formatPower, formatEnergy } from '@shared/format.js';
 
 export class Shop {
   constructor(game) {
@@ -24,6 +24,7 @@ export class Shop {
           {
             class: `tab ${c.id === this.cat ? 'active' : ''}`,
             title: c.name,
+            'data-cat': c.id,
             style: { '--tab-color': `${c.color}33`, '--tab-border': `${c.color}aa` },
             onclick: () => {
               this.cat = c.id;
@@ -53,6 +54,7 @@ export class Shop {
       if (cat.env === 'sun') tags.push(h('span', {}, '🌙 gece düşük'));
       if (cat.env === 'wind') tags.push(h('span', {}, '🌬️ rüzgara bağlı'));
       if (cat.pollution > 0) tags.push(h('span', { class: 'bad' }, `🏭 kirlilik %${Math.round(cat.pollution * 100)}`));
+      if (def.storage) tags.push(h('span', {}, `⏱️ ${def.hours} saat`), h('span', {}, `♻️ verim %${Math.round(def.eff * 100)}`));
       const el = h(
         'div',
         {
@@ -89,6 +91,7 @@ export class Shop {
       meta.dataset.key = key;
       meta.innerHTML = '';
       meta.append(h('span', { class: 'pw' }, `⚡ ${formatPower(power)}`));
+      if (def.storage) meta.append(h('span', { class: 'pw' }, `🔋 ${formatEnergy(def.capacity * edu)}`));
       if (upkeep > 0) meta.append(h('span', { class: 'bad' }, `⛽ −${formatMoney(upkeep)}/sn`));
     }
   }

@@ -150,12 +150,15 @@ tests/             ekonomi ve ızgara birim testleri + denge simülasyonu
 - [x] **Faz 5 — Cilalama:** parçacık efektleri, sesler, dokunmatik kontroller, instancing + dondurma, taşıma, büyüme animasyonu
 - [x] **Faz 6 — Yayın:** üretim build'i, Dockerfile, render.yaml, kurulum notları (README)
 
+- [x] **Faz 7 — Gerçekçilik & cila:** günlük talep eğrisi, 🔋 Depolama kategorisi (7 birim), malzeme sistemi
+  (metal/cam/su/cephe dokusu), post-processing (bloom, ACES, SSAO), gerçekçi zemin/ağaç/şelale/sokak lambası,
+  ⚙️ ayarlar menüsü, ilk giriş eğitimi, ortam sesi, tek oyunculu modda zorluk (yapay zekâ adaları kaldırıldı)
+
 ### Denge (bot simülasyonu, `npm run balance`)
 Kusursuz oynayan bot: Kasaba ~2 dk · İlçe ~5 dk · Şehir ~9 dk · Büyük Şehir ~15 dk · Metropol / ilk yeniden doğuş ~31 dk ·
 Gezegen Başkenti ~3,5 sa. Gerçek oyuncular için bu sürelerin kabaca 2-3 katı beklenir.
 
-### Sonraki fikirler (Faz 7+)
-- 🔋 Depolama kategorisi (bataryalar gece açığını kapatır)
+### Sonraki fikirler (Faz 8+)
 - Hava olayları (fırtına, bulutlu gün), görevler/başarımlar, günlük ödüller
 - Oyuncular arası elektrik ticareti, klanlar
 - Kozmetik ada temaları

@@ -24,6 +24,8 @@ export function privateState(p) {
     rebirths: p.rebirths,
     bestCity: p.bestCity,
     pop: p.pop,
+    stored: p.stored || 0,
+    difficulty: p.difficulty || 'normal',
     land: p.land,
     centers: p.centers,
   };
@@ -33,7 +35,14 @@ export function privateState(p) {
 export function slimStats(s) {
   return {
     supply: s.supply,
+    available: s.available,
     rated: s.rated,
+    demandFactor: s.demandFactor,
+    storePower: s.storePower,
+    storeCap: s.storeCap,
+    stored: s.stored,
+    charge: s.charge,
+    discharge: s.discharge,
     demand: s.demand,
     served: s.served,
     coverage: s.coverage,

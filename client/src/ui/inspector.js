@@ -1,10 +1,10 @@
 // Seçili santralin bilgi kartı (yükselt / sat)
-import { $, h } from './dom.js';
+import { $, h, confirmButton } from './dom.js';
 import { GENERATOR_BY_ID, upgradeCost, sellValue, levelPowerMult, MAX_GEN_LEVEL } from '@shared/data/generators.js';
 import { CATEGORY_BY_ID } from '@shared/data/categories.js';
 import { CENTER_BY_ID } from '@shared/data/centers.js';
 import { envFactor } from '@shared/env.js';
-import { formatMoney, formatPower } from '@shared/format.js';
+import { formatMoney, formatPower, formatEnergy } from '@shared/format.js';
 
 export class Inspector {
   constructor(game) {
@@ -22,6 +22,13 @@ export class Inspector {
     this.sel = null;
     this.el.classList.add('hidden');
     this.game.world.showSelection(-1, null);
+  }
+
+  sellButton(def, g) {
+    const btn = h('button', { class: 'btn red' }, `💰 Sat ${formatMoney(sellValue(def, g.level))}`);
+    if (this.game.settings.get('confirmSell')) confirmButton(btn, 'Emin misin? Tekrar tıkla', () => this.game.sellSelected(true));
+    else btn.addEventListener('click', () => this.game.sellSelected(true));
+    return btn;
   }
 
   current() {
@@ -63,13 +70,21 @@ export class Inspector {
         ),
         h('button', { class: 'icon-btn small insp-close', onclick: () => this.close(), title: 'Kapat (Esc)' }, '✕'),
       ),
-      h(
-        'div',
-        { class: 'insp-stats' },
-        h('div', {}, 'Şu an', h('b', {}, formatPower(now))),
-        h('div', {}, 'Kurulu güç', h('b', {}, formatPower(rated))),
-        h('div', {}, cat.upkeep > 0 ? 'Yakıt' : 'Kirlilik', h('b', {}, cat.upkeep > 0 ? `−${formatMoney(rated * cat.upkeep)}/sn` : cat.pollution > 0 ? `%${cat.pollution * 100}` : 'Temiz 🍃')),
-      ),
+      def.storage
+        ? h(
+            'div',
+            { class: 'insp-stats' },
+            h('div', {}, 'Şarj/deşarj', h('b', {}, formatPower(rated))),
+            h('div', {}, 'Kapasite', h('b', {}, formatEnergy(def.capacity * (rated / def.power)))),
+            h('div', {}, 'Verim', h('b', {}, `%${Math.round(def.eff * 100)}`)),
+          )
+        : h(
+            'div',
+            { class: 'insp-stats' },
+            h('div', {}, 'Şu an', h('b', {}, formatPower(now))),
+            h('div', {}, 'Kurulu güç', h('b', {}, formatPower(rated))),
+            h('div', {}, cat.upkeep > 0 ? 'Yakıt' : 'Kirlilik', h('b', {}, cat.upkeep > 0 ? `−${formatMoney(rated * cat.upkeep)}/sn` : cat.pollution > 0 ? `%${cat.pollution * 100}` : 'Temiz 🍃')),
+          ),
     );
     if (mine) {
       const upBtn = h(
@@ -85,7 +100,7 @@ export class Inspector {
           { class: 'insp-actions' },
           upBtn,
           h('button', { class: 'btn ghost', title: 'Taşı (M)', onclick: () => this.game.startMove() }, '↔️'),
-          h('button', { class: 'btn red', onclick: () => this.game.sellSelected() }, `💰 Sat ${formatMoney(sellValue(def, g.level))}`),
+          this.sellButton(def, g),
         ),
       );
       if (nextRated) this.el.append(h('div', { class: 'insp-sub', style: { marginTop: '8px' } }, `Sonraki seviye: ⚡ ${formatPower(nextRated)}`));

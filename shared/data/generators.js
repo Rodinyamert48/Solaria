@@ -1,5 +1,6 @@
 import { BALANCE } from '../balance.js';
 import { CATEGORY_BY_ID } from './categories.js';
+import { GAME_HOUR_S } from '../env.js';
 
 // [id, kategori, ad, kademe (tier), boyut (karo), açıklama]
 const RAW = [
@@ -85,7 +86,27 @@ const RAW = [
   ['future_zeropoint', 'fusion', 'Sıfır Noktası Jeneratörü', 52, 3, 'Boşluğun kendisinden enerji.'],
   ['future_dyson', 'fusion', 'Dyson Işın Alıcısı', 56, 4, 'Bir yıldızın tüm gücü tek ışında.'],
   ['future_blackhole', 'fusion', 'Kara Delik Jeneratörü', 60, 4, 'Minik bir kara delik. Dikkatli ol.'],
+
+  // 🔋 Depolama (güç = en fazla şarj/deşarj hızı)
+  ['battery_lead', 'storage', 'Kurşun-Asit Akü Dolabı', 3, 1, 'Klasik aküler. Ucuz ama verimi düşük.'],
+  ['battery_liion', 'storage', 'Lityum-İyon Batarya', 9, 1, 'Konteyner içinde yüksek verimli hücreler.'],
+  ['battery_flow', 'storage', 'Akış Bataryası', 15, 2, 'Dev tanklarda sıvı elektrolit; uzun süre depolar.'],
+  ['storage_air', 'storage', 'Basınçlı Hava Deposu', 21, 2, 'Havayı yer altına sıkıştırır, türbinle geri alır.'],
+  ['storage_pumped', 'storage', 'Pompaj Depolamalı HES', 27, 3, 'Suyu yukarı pompalar, gerektiğinde akıtır.'],
+  ['battery_mega', 'storage', 'Mega Batarya Parkı', 34, 3, 'Yüzlerce konteyner, şebeke ölçeğinde batarya.'],
+  ['storage_gravity', 'storage', 'Yerçekimi Deposu', 40, 3, 'Beton blokları kaldırıp indirerek enerji saklar.'],
 ];
+
+// Depolama birimleri: kaç oyun saati tam güçle verebilir ve gidiş-dönüş verimi
+export const STORAGE_SPECS = {
+  battery_lead: { hours: 4, eff: 0.78 },
+  battery_liion: { hours: 4, eff: 0.92 },
+  battery_flow: { hours: 8, eff: 0.75 },
+  storage_air: { hours: 10, eff: 0.7 },
+  storage_pumped: { hours: 12, eff: 0.8 },
+  battery_mega: { hours: 6, eff: 0.92 },
+  storage_gravity: { hours: 10, eff: 0.85 },
+};
 
 // Göze hoş gelen yuvarlama: 2 anlamlı basamak (1234 -> 1200)
 export function niceRound(n) {
@@ -105,8 +126,8 @@ export function tierPower(tier) {
 export const GENERATORS = RAW.map(([id, cat, name, tier, size, desc], index) => {
   const category = CATEGORY_BY_ID[cat];
   if (!category) throw new Error(`Bilinmeyen kategori: ${cat}`);
-  const power = tierPower(tier) * category.powerMult * BALANCE.sizePowerMult[size];
-  return {
+  const power = Math.round(tierPower(tier) * category.powerMult * BALANCE.sizePowerMult[size] * 100) / 100;
+  const def = {
     id,
     cat,
     name,
@@ -115,8 +136,16 @@ export const GENERATORS = RAW.map(([id, cat, name, tier, size, desc], index) => 
     desc,
     index,
     cost: tierCost(tier),
-    power: Math.round(power * 100) / 100, // anma gücü (kW), seviye 1
+    power, // anma gücü (kW), seviye 1. Depolamada: en fazla şarj/deşarj gücü
   };
+  if (category.storage) {
+    const spec = STORAGE_SPECS[id];
+    def.storage = true;
+    def.hours = spec.hours;
+    def.eff = spec.eff;
+    def.capacity = power * spec.hours * GAME_HOUR_S; // kW·sn
+  }
+  return def;
 });
 
 export const GENERATOR_BY_ID = Object.fromEntries(GENERATORS.map((g) => [g.id, g]));

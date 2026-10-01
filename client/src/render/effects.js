@@ -37,6 +37,10 @@ const KINDS = {
     c1: [1, 1, 1, 0.55], c2: [0.95, 0.97, 1, 0.45], dead: [1, 1, 1, 0],
     size: [0.5, 1.1], life: [2, 3.4], rate: 4, power: [0.35, 0.6], grow: 1.5, blend: ParticleSystem.BLENDMODE_STANDARD,
   },
+  mist: {
+    c1: [0.9, 0.95, 1, 0.35], c2: [0.85, 0.92, 1, 0.25], dead: [1, 1, 1, 0],
+    size: [0.8, 1.8], life: [1.6, 3], rate: 10, power: [0.2, 0.5], grow: 1.8, blend: ParticleSystem.BLENDMODE_STANDARD,
+  },
   fire: {
     c1: [1, 0.75, 0.25, 1], c2: [1, 0.4, 0.1, 1], dead: [0.4, 0.1, 0, 0],
     size: [0.15, 0.35], life: [0.35, 0.7], rate: 14, power: [0.6, 1.1], grow: 0.4, blend: ParticleSystem.BLENDMODE_ADD,
@@ -89,6 +93,7 @@ export class IslandEffects {
     const scene = this.world.scene;
     const byKind = {};
     const origin = this.island.root.position;
+    for (const em of this.island.staticEmitters || []) (byKind[em.type] ||= []).push(origin.add(em.pos));
     for (const e of this.island.gens.values()) {
       const tpl = this.world.templates.generator(e.g.type);
       if (!tpl.emitters.length) continue;
@@ -109,10 +114,25 @@ export class IslandEffects {
       }
       if (!ps) {
         ps = this.systems[kind] = makeSystem(scene, kind, Math.min(1500, 120 + pts.length * 60));
+        if (this.light != null) this.setLight(this.light);
       }
       ps.points = pts;
-      ps.emitRate = Math.min(400, KINDS[kind].rate * pts.length);
-      if (!ps.isStarted()) ps.start();
+      const scale = this.world.particleScale ?? 1;
+      ps.emitRate = Math.min(500, KINDS[kind].rate * pts.length * scale);
+      if (scale <= 0) ps.stop();
+      else if (!ps.isStarted()) ps.start();
+    }
+  }
+
+  // Gece/gündüz: duman ve buhar renklerini ışığa göre ölçekle (alev hariç)
+  setLight(f) {
+    this.light = f;
+    for (const [kind, ps] of Object.entries(this.systems)) {
+      if (kind === 'fire') continue;
+      const k = KINDS[kind];
+      ps.color1 = new Color4(k.c1[0] * f, k.c1[1] * f, k.c1[2] * f, k.c1[3]);
+      ps.color2 = new Color4(k.c2[0] * f, k.c2[1] * f, k.c2[2] * f, k.c2[3]);
+      ps.colorDead = new Color4(k.dead[0] * f, k.dead[1] * f, k.dead[2] * f, 0);
     }
   }
 

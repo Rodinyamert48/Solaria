@@ -54,6 +54,11 @@ export const CATEGORIES = [
     powerMult: 2.0, pollution: 0, upkeep: 0, env: null,
     desc: 'Geleceğin teknolojileri. Oyun sonu için akıl almaz güç.',
   },
+  {
+    id: 'storage', name: 'Depolama', icon: '🔋', color: '#5ee6a8',
+    powerMult: 1.3, pollution: 0, upkeep: 0, env: null, storage: true,
+    desc: 'Elektrik üretmez: boşa giden fazlayı saklar, gece ve akşam zirvesinde şehre geri verir.',
+  },
 ];
 
 export const CATEGORY_BY_ID = Object.fromEntries(CATEGORIES.map((c) => [c.id, c]));

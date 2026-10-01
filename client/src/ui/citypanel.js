@@ -6,7 +6,7 @@ import { BALANCE } from '@shared/balance.js';
 import { buildableTileCount, MAX_LAND_LEVEL } from '@shared/grid.js';
 import { landCost, canRebirth } from '@shared/actions.js';
 import { rebirthRequirement, rebirthMultiplier } from '@shared/economy.js';
-import { formatMoney, formatPower, formatPop, formatNumber } from '@shared/format.js';
+import { formatMoney, formatPower, formatPop, formatNumber, formatEnergy } from '@shared/format.js';
 
 export class CityPanel {
   constructor(game) {
@@ -189,7 +189,16 @@ export class CityPanel {
       row('Talep', formatPower(s.demand)),
       row('Karşılanan', `%${Math.round(s.coverage * 100)}`),
       row('Boşa giden', formatPower(s.wasted)),
+      row('Saatlik talep çarpanı', `×${(s.demandFactor ?? 1).toFixed(2).replace('.', ',')}`),
     );
+    if (s.storeCap > 0) {
+      list.append(h('div', { class: 'section-title' }, 'Depolama'));
+      list.append(
+        row('Doluluk', `${formatEnergy(s.stored)} / ${formatEnergy(s.storeCap)}`),
+        row('En fazla güç', formatPower(s.storePower)),
+        row('Şu an', s.discharge > 0 ? `↓ ${formatPower(s.discharge)} veriyor` : s.charge > 0 ? `↑ ${formatPower(s.charge)} şarj` : 'Beklemede'),
+      );
+    }
     list.append(h('div', { class: 'section-title' }, 'Ekonomi'));
     list.append(
       row('Elektrik fiyatı', `${formatMoney(s.price)} / kW·sn`),

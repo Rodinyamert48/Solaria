@@ -1,7 +1,9 @@
 // İzometrik ortografik kamera: kaydır, yakınlaştır, döndür (yumuşak geçişli)
 import { ArcRotateCamera, Camera, Vector3 } from './babylon.js';
 
-const BETA = 0.96; // dikeyden açı (~55°) -> klasik izometrik his
+// Dikeyden açı: izometrik (~55°), yukarıdan (~40°), alçak (~66°)
+export const CAMERA_ANGLES = { izometrik: 0.96, yukaridan: 0.7, alcak: 1.15 };
+const BETA = CAMERA_ANGLES.izometrik;
 const MIN_ZOOM = 4;
 const MAX_ZOOM = 75;
 
@@ -16,9 +18,10 @@ export class IsoCamera {
     this.camera.inputs.clear();
 
     this.alpha = this.camera.alpha;
+    this.beta = BETA;
     this.zoom = 22;
     this.target = Vector3.Zero();
-    this.goal = { alpha: this.alpha, zoom: this.zoom, target: this.target.clone() };
+    this.goal = { alpha: this.alpha, beta: BETA, zoom: this.zoom, target: this.target.clone() };
     this.keys = new Set();
     this.bounds = { minX: -100, maxX: 100, minZ: -70, maxZ: 70 };
 
@@ -42,7 +45,7 @@ export class IsoCamera {
     const { forward, right } = this.forwardRight();
     const u = this.unitsPerPixel;
     this.goal.target.addInPlace(right.scale(-dxPx * u));
-    this.goal.target.addInPlace(forward.scale((dyPx * u) / Math.cos(BETA)));
+    this.goal.target.addInPlace(forward.scale((dyPx * u) / Math.cos(this.beta)));
     this.clamp();
   }
 
@@ -51,6 +54,10 @@ export class IsoCamera {
     t.x = Math.min(this.bounds.maxX, Math.max(this.bounds.minX, t.x));
     t.z = Math.min(this.bounds.maxZ, Math.max(this.bounds.minZ, t.z));
     t.y = 0;
+  }
+
+  setAngle(name) {
+    this.goal.beta = CAMERA_ANGLES[name] ?? BETA;
   }
 
   zoomBy(factor) {
@@ -157,12 +164,13 @@ export class IsoCamera {
 
     const k = 1 - Math.exp(-dt * 10);
     this.alpha += (this.goal.alpha - this.alpha) * k;
+    this.beta += (this.goal.beta - this.beta) * k;
     this.zoom += (this.goal.zoom - this.zoom) * k;
     Vector3.LerpToRef(this.target, this.goal.target, k, this.target);
 
     const cam = this.camera;
     cam.alpha = this.alpha;
-    cam.beta = BETA;
+    cam.beta = this.beta;
     cam.target.copyFrom(this.target);
     const aspect = this.canvas.clientWidth / Math.max(1, this.canvas.clientHeight);
     cam.orthoTop = this.zoom;

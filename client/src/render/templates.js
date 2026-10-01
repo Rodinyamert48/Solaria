@@ -1,24 +1,7 @@
 // Şablon önbelleği: her model ilk kullanıldığında bir kez üretilir
 import { buildTemplate } from './kit.js';
 import { MODELS } from './models/generators.js';
-import { tree, PI } from './models/helpers.js';
-import { C } from './models/palette.js';
-
-// Havada süzülen ada gövdesi (üst yüzey ayrı bir zemin mesh'i)
-function islandModel(k) {
-  k.box(30, 0.5, 30, '#76bd58', { y: -0.25 });
-  k.box(29.7, 1.5, 29.7, '#9a6b45', { y: -1.25 });
-  k.box(29.2, 1.3, 29.2, '#85603f', { y: -2.6 });
-  k.cyl(40.5, 6, 12, '#8a8178', { y: -9.25, tess: 4, ry: PI / 4 });
-  k.cyl(10, 2, 5, '#7b736b', { y: -16.5, x: 3, z: -2, tess: 5 });
-  // kenar taşları
-  for (let i = 0; i < 14; i++) {
-    const a = (i / 14) * PI * 2;
-    k.sphere(1.6 + (i % 3) * 0.6, i % 2 ? '#8a8178' : '#978d83', {
-      ico: true, sub: 0, x: Math.cos(a) * 12, z: Math.sin(a) * 12, y: -4.2 - (i % 4), sy: 0.8,
-    });
-  }
-}
+import { treeVariant, bushModel, rockModel, fenceModel, lampModel, islandModel } from './models/nature.js';
 import {
   towerModel, houseModel, shopModel, spireModel, carModel, cityHallModel, LANDMARKS, crownModel,
 } from './models/city.js';
@@ -33,6 +16,8 @@ export class Templates {
     let t = this.cache.get(key);
     if (!t) {
       t = buildTemplate(this.scene, key, this.builder(key));
+      // su ve cam yalnızca yansıma için emissive kullanır: parlama katmanına girmesin
+      for (const g of t.groups) for (const m of g.meshes) if (m.metadata?.noGlow) this.glow?.addExcludedMesh(m);
       this.cache.set(key, t);
     }
     return t;
@@ -53,15 +38,15 @@ export class Templates {
       case 'car':
         return carModel(Number(a));
       case 'tree':
-        return (k) => {
-          const n = Number(a) + 1;
-          for (let i = 0; i < n; i++) tree(k, (i - (n - 1) / 2) * 0.32, (i % 2) * 0.2 - 0.1, 1 + i * 0.15);
-        };
+        return (k) => treeVariant(k, Number(a));
+      case 'bush':
+        return bushModel;
       case 'rock':
-        return (k) => {
-          k.sphere(0.55, C.rock, { ico: true, sub: 0, sy: 0.6, y: 0.12 });
-          k.sphere(0.3, C.grey, { ico: true, sub: 0, x: 0.25, z: 0.15, y: 0.08 });
-        };
+        return rockModel;
+      case 'fence':
+        return fenceModel;
+      case 'lamp':
+        return lampModel;
       case 'island':
         return islandModel;
       case 'spire':

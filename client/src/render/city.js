@@ -130,7 +130,6 @@ export class City {
       if (lvl > 0) {
         const s = 0.82 + 0.025 * Math.min(lvl, 16);
         this.place(`landmark:${block.center}`, block.lmX, block.lmZ, { scale: [s, s, s] });
-        if (lvl >= 10) this.place('crown', block.lmX, block.lmZ, { y: 2.2 * s + 0.2 });
       }
       for (const t of block.tiles) if (!(lvl > 0 && t.inLandmark)) lots.push(t);
     }
@@ -147,7 +146,7 @@ export class City {
       const r = lot.rand;
       if (i >= count) {
         if (hash(lot.tx, lot.ty, this.seed + 7) < 0.35 + parkLevel * 0.06)
-          this.place(`tree:${Math.floor(r * 3)}`, lot.x, lot.z, { rot: r * 6 });
+          this.place(`tree:${Math.floor(r * 50) % 5}`, lot.x, lot.z, { rot: r * 6 });
         return;
       }
       const closeness = 1 - lot.dist / 5;
@@ -170,13 +169,28 @@ export class City {
       if (level >= 6 && floors >= 24 && r > 0.4) this.place('spire', lot.x, lot.z, { y: floors * 0.2 });
     });
 
+    // Sokak lambaları (kasabadan itibaren): yolların iki yanındaki kaldırımlarda
+    if (level >= 1) {
+      for (const line of ROAD_COORDS) {
+        for (const t of [-4.2, -2.6, 2.6, 4.2]) {
+          for (const side of [-1, 1]) {
+            const off = side * 0.56;
+            const tt = t + side * 0.35;
+            // x yönündeki yol (z = line) ve z yönündeki yol (x = line)
+            this.place('lamp', tt, line + off, { rot: side > 0 ? Math.PI / 2 : -Math.PI / 2 });
+            this.place('lamp', line + off, tt, { rot: side > 0 ? Math.PI : 0 });
+          }
+        }
+      }
+    }
+
     // Arabalar
     const carCount = Math.min(28, 2 + level * 3);
     for (let i = 0; i < carCount; i++) {
       const axis = i % 2 === 0 ? 'x' : 'z';
       const line = ROAD_COORDS[(i >> 1) % 2];
       const dir = hash(i, 1, this.seed) < 0.5 ? 1 : -1;
-      const inst = this.world.templates.get(`car:${i % 6}`).instantiate(this.parent);
+      const inst = this.world.templates.get(`car:${i % 7}`).instantiate(this.parent);
       this.world.registerInstance(inst);
       this.cars.push({
         inst,

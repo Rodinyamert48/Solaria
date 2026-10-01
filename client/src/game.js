@@ -8,7 +8,10 @@ import { Chat } from './ui/chat.js';
 import { setupLogin, setServerStatus, setLoginMode, hideLogin, confirmReset } from './ui/login.js';
 import { World } from './render/world.js';
 import { createConnection } from './connection.js';
-import { sfx } from './sfx.js';
+import { settings } from './settings.js';
+import { sfx, Ambience } from './sfx.js';
+import { SettingsPanel } from './ui/settingsPanel.js';
+import { Tutorial } from './ui/tutorial.js';
 import { GENERATOR_BY_ID, GENERATORS } from '@shared/data/generators.js';
 import { CATEGORIES } from '@shared/data/categories.js';
 import { CENTER_BY_ID, CENTERS, CITY_LEVELS } from '@shared/data/centers.js';
@@ -34,7 +37,13 @@ export class Game {
     this.prevCityLevel = null;
     this.uiTimer = 0;
 
-    this.world = new World(canvas);
+    this.settings = settings;
+    this.world = new World(canvas, settings.values);
+    settings.subscribe((v) => {
+      this.world.applySettings(v);
+      this.applyUiSettings(v);
+    });
+    this.ambience = new Ambience();
     this.world.setTimeSource(() => Date.now() + this.state.serverOffset);
     this.net = createConnection();
     this.hud = new Hud();
@@ -42,6 +51,12 @@ export class Game {
     this.city = new CityPanel(this);
     this.inspector = new Inspector(this);
     this.chat = new Chat(this);
+    this.settingsPanel = new SettingsPanel(this);
+    this.tutorial = new Tutorial(this);
+    this.applyUiSettings(settings.values);
+    this.world.on('fps', (fps) => {
+      if (settings.get('fps')) $('#fps').textContent = `${Math.round(fps)} FPS`;
+    });
 
     this.bindNet();
     this.bindWorld();
@@ -51,6 +66,11 @@ export class Game {
     // Giriş ekranının arkasında dünya yavaşça dönsün
     this.world.cam.goal.zoom = 48;
     this.world.cam.zoom = 48;
+  }
+
+  applyUiSettings(v) {
+    document.documentElement.style.setProperty('--ui-scale', String((v.uiScale || 100) / 100));
+    $('#fps').classList.toggle('hidden', !v.fps);
   }
 
   get myPlot() {
@@ -124,17 +144,20 @@ export class Game {
     $('#citypanel').classList.toggle('hidden', small);
     $('#open-shop').classList.toggle('hidden', !small);
     $('#open-city').classList.toggle('hidden', !small);
+    document.body.classList.toggle('local-mode', !!this.net.local);
     this.hud.show();
-    this.chat.show();
+    if (!this.net.local) this.chat.show();
     this.shop.update();
     this.city.update();
+    sfx.unlock();
+    this.ambience.start();
 
     if (res.offline?.gain > 0) {
       toast(`🌙 Sen yokken ${formatMoney(res.offline.gain)} kazandın (${formatDuration(res.offline.seconds)})`, 'gold', 6);
     }
-    if (first && this.myPlot && this.myPlot.generators.length <= 1) {
-      setTimeout(() => toast('💡 Soldan bir santral seç ve adanda boş bir yere tıkla!', '', 6), 1200);
-    }
+    // İlk girişte eğitim
+    const newPlayer = res.firstTime || (this.myPlot && this.myPlot.generators.length <= 3 && (res.me.centers?.residential ?? 0) === 0);
+    if (first && !this.tutorial.done && newPlayer) setTimeout(() => this.tutorial.start(), 900);
     this.net.measureOffset().then((o) => {
       if (o != null) st.serverOffset = o;
     });
@@ -145,9 +168,7 @@ export class Game {
   bindNet() {
     const st = this.state;
     if (this.net.local) {
-      setLoginMode(
-        '🎮 <b>Tek oyunculu mod</b> — ilerlemen bu tarayıcıda kaydedilir. Komşu adalarda yapay zekâ oyuncular var.',
-      );
+      setLoginMode('🎮 <b>Tek oyunculu mod</b> — ilerlemen bu tarayıcıda kaydedilir.');
     } else if (this.net.url) {
       setLoginMode(`🌐 <b>Online mod</b> — sunucu: ${this.net.url.replace(/[<>&"]/g, '')}`);
     }
@@ -249,6 +270,7 @@ export class Game {
     this.uiTimer += dt;
     if (this.uiTimer > 0.25) {
       this.uiTimer = 0;
+      this.ambience.update(this.world.env, st.stats?.cityLevel ?? 0);
       this.shop.update();
       if (this.world.env) this.hud.updateEnv(this.world.env, Date.now() + st.serverOffset);
       if (this.buildType && this.lastHover) this.onHover(this.lastHover);
@@ -309,6 +331,7 @@ export class Game {
       if (res.ok) {
         sfx.build();
         this.floatAtPointer(`−${formatMoney(def.cost)}`);
+        if (!settings.get('continuousBuild')) this.cancelBuild();
       }
       return;
     }
@@ -354,6 +377,7 @@ export class Game {
     this.moveGid = moveGid;
     this.inspector.close();
     this.world.setGhost(type);
+    this.world.setBuildMode(true);
     $('#build-hint').classList.remove('hidden');
     this.setHint(null);
     if (this.lastHover) this.onHover(this.lastHover);
@@ -372,6 +396,7 @@ export class Game {
     this.moveGid = null;
     this.ghostPos = null;
     this.world.setGhost(null);
+    this.world.setBuildMode(false);
     $('#build-hint').classList.add('hidden');
     this.shop.update();
   }
@@ -404,9 +429,20 @@ export class Game {
     }
   }
 
-  async sellSelected() {
+  async sellSelected(confirmed = false) {
     const cur = this.inspector.current();
     if (!cur || cur.plot.slot !== this.state.slot) return;
+    // Klavyeyle satışta onay: ikinci X basışı
+    if (!confirmed && settings.get('confirmSell')) {
+      const now = Date.now();
+      if (this.pendingSell !== cur.g.gid || now - this.pendingSellAt > 2500) {
+        this.pendingSell = cur.g.gid;
+        this.pendingSellAt = now;
+        toast('Satmak için tekrar X\'e bas', '', 2);
+        return;
+      }
+    }
+    this.pendingSell = null;
     const res = await this.act('sell', { gid: cur.g.gid });
     if (res.ok) {
       sfx.sell();
@@ -453,7 +489,8 @@ export class Game {
       if (!this.state.me) return;
       const k = e.key.toLowerCase();
       if (k === 'escape') {
-        if (this.buildType) this.cancelBuild();
+        if (this.settingsPanel.isOpen()) this.settingsPanel.close();
+        else if (this.buildType) this.cancelBuild();
         else this.inspector.close();
         $('#help').classList.add('hidden');
       } else if (k === 'b') this.togglePanel('shop');
@@ -492,6 +529,7 @@ export class Game {
     $('#open-city').addEventListener('click', () => this.togglePanel('citypanel', true));
     $('#btn-home').addEventListener('click', () => this.world.focusSlot(this.state.slot, 21));
     $('#btn-help').addEventListener('click', () => $('#help').classList.remove('hidden'));
+    $('#btn-settings').addEventListener('click', () => this.settingsPanel.open());
     $('#help-close').addEventListener('click', () => $('#help').classList.add('hidden'));
     if (this.net.local) {
       const reset = $('#help-reset');

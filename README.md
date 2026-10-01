@@ -9,22 +9,29 @@ Adana santraller kur, şehrine elektrik ver, merkezlerini büyüt, daha çok ins
 
 ![Oyun içi görünüm](docs/screenshots/oyun.jpg)
 
-| Gece: pencereler yanar, enerji şehre akar | Vitrin: 63 santralin tamamı |
+| Gece: pencereler yanar, enerji şehre akar | Vitrin: tüm santraller |
 |---|---|
 | ![Gece](docs/screenshots/oyun-gece.jpg) | ![Vitrin](docs/screenshots/vitrin.jpg) |
 
 ## Özellikler
 
-- **10 enerji kategorisi, 63 santral:** Güneş, Rüzgar, Hidro, Biyokütle, Kömür, Petrol, Doğalgaz, Jeotermal,
-  Nükleer, Füzyon & Gelecek — her birinde 6-7 birim, hepsi koddan üretilmiş animasyonlu low-poly 3D modeller.
-- **Arz–talep ekonomisi:** Şehre verdiğin her kW saniyede para kazandırır. Fazla elektrik boşa gider, eksik elektrik
-  karartma yapar ve insanlar şehri terk eder.
+- **11 kategori, 70 birim:** Güneş, Rüzgar, Hidro, Biyokütle, Kömür, Petrol, Doğalgaz, Jeotermal, Nükleer,
+  Füzyon & Gelecek ve 🔋 Depolama — her birinde 6-7 birim, hepsi koddan üretilmiş animasyonlu 3D modeller.
+- **Gerçekçi şebeke:** Şehre verdiğin her kW saniyede para kazandırır. Talep günün saatine göre değişir (gece düşük,
+  akşam 19-20 zirve). Güneş gece üretmez, rüzgar sürekli değişir. Bataryalar ve pompaj depolamalı HES fazla elektriği
+  saklayıp zirvede şehre verir. Karartmada şehre kimse gelmez, uzarsa insanlar şehri terk eder.
 - **Büyüyen şehir:** 8 şehir merkezi (Konut, Ticaret, Park, Sanayi, Sağlık, Eğitim & Ar-Ge, Eğlence, Ulaşım).
-  Köyden Gezegen Başkenti'ne 9 şehir seviyesi; evler apartmana, apartmanlar gökdelene dönüşür.
-- **Canlı dünya:** Gece/gündüz döngüsü (güneş gece üretmez), sürekli değişen rüzgar, fosil yakıt kirliliği ve
-  yakıt gideri, bacalardan duman, soğutma kulelerinden buhar, gece yanan pencereler, yollarda arabalar.
-- **Online:** 6 adalık sunucu odaları, diğer oyuncuların adalarını canlı görme, oda sohbeti, oda ve tüm zamanlar
-  liderlik tabloları, sunucu tarafında kayıt, çevrimdışı kazanç.
+  Köyden Gezegen Başkenti'ne 9 şehir seviyesi; evler apartmana, apartmanlar kademeli cam gökdelenlere dönüşür.
+- **Grafikler:** Pencere dokulu cepheler (gece rastgele pencereler yanar), metal/cam/su malzemeleri, dalgalanan su,
+  şelale, sokak lambaları, ağaç türleri, çitler, kameraya oturan keskin gölgeler, bloom, ton eşleme (ACES), SSAO,
+  sis, gökyüzünde güneş/ay, duman/buhar/alev parçacıkları.
+- **⚙️ Ayarlar:** Kalite ön ayarları (Düşük/Orta/Yüksek/Ultra) ve tek tek gölge, bloom, SSAO, MSAA, parçacık,
+  bulut, çözünürlük ölçeği, FPS göstergesi; zorluk (tek oyunculu), kamera açısı, inşa ızgarası, sürekli inşa,
+  satış onayı; efekt ve ortam sesi (rüzgar, kuşlar, cırcır böcekleri, şehir uğultusu); arayüz boyutu.
+- **🎓 Eğitim:** İlk girişte arayüzü vurgulayıp oyuncunun gerçekten santral kurmasını ve şehri büyütmesini bekleyen
+  adım adım rehber (Ayarlar → Oyun'dan yeniden başlatılabilir).
+- **Online:** 6 adalık sunucu odaları, diğer oyuncuların adalarını canlı görme, oda sohbeti, liderlik tabloları,
+  sunucu tarafında kayıt, çevrimdışı kazanç. GitHub Pages sürümü sunucusuz tek oyunculu oynanır.
 - **İlerleme:** Santral yükseltme (5 seviye), taşıma, satma, arazi genişletme, yeniden doğuş (kalıcı gelir çarpanı).
 
 ## Hızlı başlangıç
@@ -65,7 +72,7 @@ docker run -p 3000:3000 -v solaria-data:/app/data solaria
 **Canlı:** https://rodinyamert48.github.io/Solaria/
 
 GitHub Pages yalnızca statik dosya sunduğu için bu sürüm oyunu **tamamen tarayıcıda** çalıştırır: simülasyon aynı
-`shared/` koduyla yürür, ilerleme tarayıcıya (`localStorage`) kaydedilir ve komşu adalarda 3 yapay zekâ oyuncu oynar.
+`shared/` koduyla yürür ve ilerleme tarayıcıya (`localStorage`) kaydedilir. Zorluk (Kolay/Normal/Zor) yalnızca bu modda seçilebilir.
 
 - Her push'ta `.github/workflows/pages.yml` testleri çalıştırır, `npm run build:pages` ile derler ve `gh-pages` dalına yayınlar.
 - Yerelde denemek için: `npm run build:pages`, sonra `dist/` klasörünü `/Solaria/` yolunda sunan herhangi bir statik sunucu.
@@ -92,7 +99,7 @@ Oyun tek bir Node.js süreci olduğu için WebSocket destekleyen her platformda 
 | İptal | Sağ tık | `Esc` |
 | Paneller / Adama dön | Köşe düğmeleri | `B` `C` / `H` |
 
-**Model galerisi:** `http://localhost:5173/?vitrin` tüm 63 santrali ve tam gelişmiş bir şehri tek adada gösterir
+**Model galerisi:** `http://localhost:5173/?vitrin` tüm santralleri ve tam gelişmiş bir şehri tek adada gösterir
 (sunucu gerekmez). `&saat=0.7` ile gece görünümü.
 
 ## Proje yapısı
@@ -107,7 +114,8 @@ shared/              Sunucu ve istemcinin ortak kullandığı saf oyun mantığ�
 server/              Express + Socket.IO: odalar, kimlik, 2 Hz simülasyon, JSON kayıt
 client/
   src/render/        Babylon.js: dünya, kamera, ada, şehir, efektler, model kiti
-  src/render/models/ 63 santral + şehir binaları (prosedürel)
+  src/render/models/ 70 santral/depolama + şehir binaları + doğa (prosedürel)
+  src/render/materials.js  metal, cam, su, pencere dokulu cephe, gece yanan lambalar
   src/ui/            HUD, mağaza, şehir paneli, inceleme kartı, sohbet, giriş
 tests/               birim testleri ve denge simülasyonu
 ```

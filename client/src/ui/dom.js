@@ -1,3 +1,5 @@
+import { settings } from '../settings.js';
+
 // Küçük DOM yardımcıları
 export const $ = (sel) => document.querySelector(sel);
 
@@ -19,6 +21,8 @@ export function h(tag, attrs = {}, ...children) {
 }
 
 export function toast(text, kind = '', life = 2.6) {
+  // Ayarlarda bildirimler kapalıysa yalnızca hata uyarıları gösterilir
+  if (settings.get('notifications') === false && kind !== 'bad') return;
   const el = h('div', { class: `toast ${kind}`, style: { '--life': `${life}s` } }, text);
   $('#toasts').append(el);
   setTimeout(() => el.remove(), (life + 0.5) * 1000);

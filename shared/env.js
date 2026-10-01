@@ -39,6 +39,23 @@ export function windFactor(timeMs) {
   return Math.min(1.6, Math.max(0.4, w));
 }
 
+// Oyun saati 0..24 (0 evre = 06:00)
+export function hourOfDay(timeMs) {
+  return (dayPhase(timeMs) * 24 + 6) % 24;
+}
+
+const bump = (h, center, width) => {
+  let d = Math.abs(h - center);
+  d = Math.min(d, 24 - d);
+  return Math.exp(-(d * d) / (2 * width * width));
+};
+
+// Gerçek şehirlerdeki gibi günlük talep eğrisi: gece düşük, sabah hafif artış, akşam (19-20) zirve
+export function demandFactor(timeMs) {
+  const h = hourOfDay(timeMs);
+  return 1 + 0.14 * bump(h, 19.5, 2.2) + 0.05 * bump(h, 8, 1.5) - 0.24 * bump(h, 3.5, 2.6);
+}
+
 export function envAt(timeMs) {
   return {
     time: timeMs,
@@ -46,8 +63,12 @@ export function envAt(timeMs) {
     daylight: daylight(timeMs),
     sun: solarFactor(timeMs),
     wind: windFactor(timeMs),
+    demand: demandFactor(timeMs),
   };
 }
+
+// Bir oyun saati kaç gerçek saniye (gün 6 dakika -> 15 sn)
+export const GAME_HOUR_S = DAY_LENGTH_MS / 1000 / 24;
 
 export function envFactor(kind, env) {
   if (kind === 'sun') return env.sun;

@@ -4,14 +4,17 @@ import {
 } from './babylon.js';
 import { GENERATOR_BY_ID } from '@shared/data/generators.js';
 import { cityLevelName } from '@shared/economy.js';
-import { ISLAND_SIZE, CITY_MIN, CITY_MAX, isCityTile, isUnlocked, MAX_LAND_LEVEL } from '@shared/grid.js';
-import { BALANCE } from '@shared/balance.js';
+import { ISLAND_SIZE, CITY_MIN, CITY_MAX, isCityTile, isUnlocked } from '@shared/grid.js';
 import { City } from './city.js';
 import { IslandEffects } from './effects.js';
+import { paintGround } from './groundPainter.js';
 
 export const SPACING = 48;
-const TILE_PX = 32;
+// Karo başına doku pikseli (dokunmatik/küçük cihazlarda daha düşük)
+const TILE_PX = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches ? 32 : 48;
 const HALF = ISLAND_SIZE / 2;
+// Şelalenin adadaki yeri (adanın +x yüzü)
+export const WATERFALL = { x: HALF + 0.12, z: 4.5, top: -0.55, bottom: -12.5 };
 
 export function slotPosition(slot) {
   const col = slot % 3;
@@ -37,7 +40,11 @@ export class Island {
     this.plot = null;
     this.pop = 0;
     this.land = -1;
+    this.grid = false;
+    this.fence = [];
     this.seed = slot * 7919 + 13;
+    // Ada kenarındaki şelalenin dibindeki su sisi
+    this.staticEmitters = [{ type: 'mist', pos: new Vector3(WATERFALL.x + 0.6, WATERFALL.bottom + 0.6, WATERFALL.z) }];
 
     this.body = world.templates.get('island').instantiate(this.root);
     world.registerInstance(this.body, { noShadow: true, freeze: true });
@@ -90,6 +97,7 @@ export class Island {
       this.land = plot.land;
       this.drawGround();
       this.rebuildDecor();
+      this.rebuildFence();
     }
     // Jeneratör farkları
     const seen = new Set();
@@ -158,77 +166,39 @@ export class Island {
   }
 
   drawGround() {
-    const ctx = this.texture.getContext();
-    const T = TILE_PX;
-    const N = ISLAND_SIZE;
-    const land = this.land;
-    // Kanvas satırı: karo y=0 dokunun altında (z-) olmalı
-    const rect = (x, y, w = 1, h = 1) => [x * T, (N - y - h) * T, w * T, h * T];
-    for (let y = 0; y < N; y++) {
-      for (let x = 0; x < N; x++) {
-        const checker = (x + y) % 2 === 0;
-        let color;
-        if (isCityTile(x, y)) {
-          const cx = x - CITY_MIN;
-          const cy = y - CITY_MIN;
-          const road = cx === 3 || cx === 6 || cy === 3 || cy === 6;
-          const plaza = cx >= 4 && cx <= 5 && cy >= 4 && cy <= 5;
-          color = road ? '#5d6270' : plaza ? '#e9e1cf' : checker ? '#d6d3cb' : '#d1cec5';
-        } else if (isUnlocked(x, y, land)) {
-          color = checker ? '#8fd16f' : '#87c968';
-        } else {
-          const n = MAX_LAND_LEVEL;
-          const nextRing = land < n && isUnlocked(x, y, land + 1);
-          color = nextRing ? (checker ? '#a9c08e' : '#a2b988') : checker ? '#9fb184' : '#99ab7f';
-        }
-        ctx.fillStyle = color;
-        ctx.fillRect(...rect(x, y));
-      }
-    }
-    // Yol şeritleri
-    ctx.strokeStyle = 'rgba(255,255,255,0.75)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6, 6]);
-    for (const c of [3, 6]) {
-      const v = (CITY_MIN + c + 0.5) * T;
-      const vy = (N - (CITY_MIN + c + 0.5)) * T;
-      ctx.beginPath();
-      ctx.moveTo(v, (N - CITY_MAX - 1) * T);
-      ctx.lineTo(v, (N - CITY_MIN) * T);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(CITY_MIN * T, vy);
-      ctx.lineTo((CITY_MAX + 1) * T, vy);
-      ctx.stroke();
-    }
-    ctx.setLineDash([]);
-    // Şehir bölgesi kenarı (kaldırım)
-    ctx.strokeStyle = '#b9b4a8';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(CITY_MIN * T + 2, (N - CITY_MAX - 1) * T + 2, 10 * T - 4, 10 * T - 4);
-    // Açık arazi sınırı
-    const r = BALANCE.landRadii[land];
-    const a = Math.max(0, Math.ceil(HALF - r - 0.5));
-    const b = Math.min(N, Math.floor(HALF + r + 0.5));
-    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-    ctx.lineWidth = 3;
-    ctx.setLineDash([10, 8]);
-    ctx.strokeRect(a * T + 1.5, (N - b) * T + 1.5, (b - a) * T - 3, (b - a) * T - 3);
-    ctx.setLineDash([]);
-    // İnce ızgara çizgileri (açık arazide)
-    ctx.strokeStyle = 'rgba(0,0,0,0.05)';
-    ctx.lineWidth = 1;
-    for (let i = a; i <= b; i++) {
-      ctx.beginPath();
-      ctx.moveTo(i * T, (N - b) * T);
-      ctx.lineTo(i * T, (N - a) * T);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(a * T, (N - i) * T);
-      ctx.lineTo(b * T, (N - i) * T);
-      ctx.stroke();
-    }
+    paintGround(this.texture.getContext(), TILE_PX, { land: this.land, grid: this.grid });
     this.texture.update();
+  }
+
+  setGridVisible(show) {
+    if (show === this.grid) return;
+    this.grid = show;
+    if (this.land >= 0) this.drawGround();
+  }
+
+  // Açık arazinin sınırında ahşap çit
+  rebuildFence() {
+    for (const f of this.fence) this.world.disposeInstance(f);
+    this.fence = [];
+    let r = 0;
+    while (r < ISLAND_SIZE && isUnlocked(Math.floor(HALF) + r, Math.floor(HALF), this.land)) r++;
+    const a = Math.floor(HALF) - r;
+    const b = Math.floor(HALF) + r;
+    if (a <= 0) return; // tüm ada açık: çit yok
+    const tpl = this.world.templates.get('fence');
+    const place = (x, z, rot) => {
+      const inst = tpl.instantiate(this.root);
+      inst.root.position.set(x - HALF, 0, z - HALF);
+      inst.root.rotation.y = rot;
+      this.world.registerInstance(inst, { freeze: true });
+      this.fence.push(inst);
+    };
+    for (let i = a; i < b; i++) {
+      place(i + 0.5, a, 0);
+      place(i + 0.5, b, 0);
+      place(a, i + 0.5, Math.PI / 2);
+      place(b, i + 0.5, Math.PI / 2);
+    }
   }
 
   // Kilitli arazide süs ağaçları ve kayalar
@@ -239,11 +209,16 @@ export class Island {
       for (let x = 0; x < ISLAND_SIZE; x++) {
         if (isUnlocked(x, y, this.land) || isCityTile(x, y)) continue;
         const r = hash(x, y, this.seed);
-        if (r > 0.16) continue;
-        const key = r < 0.03 ? 'rock' : `tree:${Math.floor(r * 100) % 3}`;
+        if (r > 0.22) continue;
+        const key = r < 0.03 ? 'rock' : r < 0.06 ? 'bush' : `tree:${Math.floor(r * 1000) % 5}`;
         const inst = this.world.templates.get(key).instantiate(this.root);
         inst.root.position.copyFrom(this.tileCenter(x, y));
         inst.root.rotation.y = r * 40;
+        const sc = 0.85 + hash(y, x, this.seed) * 0.4;
+        inst.root.scaling.setAll(sc);
+        // karo içinde hafif rastgele kaydır (ızgara hissini kır)
+        inst.root.position.x += (hash(x, y, 7) - 0.5) * 0.4;
+        inst.root.position.z += (hash(x, y, 9) - 0.5) * 0.4;
         this.world.registerInstance(inst, { freeze: true });
         this.decor.push(inst);
       }
@@ -304,6 +279,7 @@ export class Island {
   dispose() {
     for (const gid of [...this.gens.keys()]) this.removeGen(gid);
     for (const d of this.decor) this.world.disposeInstance(d);
+    for (const f of this.fence) this.world.disposeInstance(f);
     this.city.dispose();
     this.effects.dispose();
     this.world.disposeInstance(this.body);

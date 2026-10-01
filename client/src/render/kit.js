@@ -1,57 +1,38 @@
-// Prosedürel low-poly model kiti.
-// Basit şekillerden (kutu, silindir, küre, torus, lathe) model kurar, hepsini tek bir köşe-renkli mesh'e
-// birleştirir. Parlayan parçalar renge göre ayrı mesh'lerde (GlowLayer için), hareketli parçalar ayrı
-// gruplarda (dönen kanat, sallanan pompa...). Sonuç bir "şablon"dur: her yerleştirmede instance oluşturulur
-// (aynı modelden yüzlerce tane çizmek tek draw call).
+// Prosedürel model kiti.
+// Basit şekillerden (kutu, silindir, küre, torus, lathe) model kurar ve parçaları malzeme anahtarına göre
+// birleştirir: 'solid' (köşe renkli), 'metal', 'glass', 'water', 'facade:res|office' (pencere dokulu cephe),
+// 'lamp' (gece yanar) ve parlayan 'glow:#renk|alfa'. Hareketli parçalar ayrı gruplarda (dönen kanat, pompa...).
+// Sonuç bir "şablon"dur: her yerleştirmede instance oluşturulur (aynı modelden yüzlercesi tek draw call).
 import {
-  Mesh, TransformNode, Vector3, Color3, StandardMaterial, VertexBuffer,
+  Mesh, TransformNode, Vector3, Vector4, Color3, VertexBuffer,
   CreateBox, CreateCylinder, CreateSphere, CreateTorus, CreateLathe, CreateIcoSphere, CreateTorusKnot,
 } from './babylon.js';
-
-const materialCache = new Map();
+import { getMaterial, isTransparentKey, isNoGlowKey } from './materials.js';
 
 export function color3(hex) {
   return Color3.FromHexString(hex);
 }
 
-export function solidMaterial(scene) {
-  if (!materialCache.has('solid')) {
-    const m = new StandardMaterial('solid', scene);
-    m.diffuseColor = new Color3(1, 1, 1);
-    m.specularColor = new Color3(0.08, 0.08, 0.08);
-    m.specularPower = 32;
-    materialCache.set('solid', m);
-  }
-  return materialCache.get('solid');
-}
-
 export function glowMaterial(scene, hex, alpha = 1) {
-  const key = `glow:${hex}:${alpha}`;
-  if (!materialCache.has(key)) {
-    const m = new StandardMaterial(key, scene);
-    const c = color3(hex);
-    m.diffuseColor = Color3.Black();
-    m.specularColor = Color3.Black();
-    m.emissiveColor = c;
-    m.disableLighting = true;
-    if (alpha < 1) {
-      m.alpha = alpha;
-      m.backFaceCulling = false;
-    }
-    materialCache.set(key, m);
-  }
-  return materialCache.get(key);
+  return getMaterial(scene, `glow:${hex}|${alpha}`);
 }
 
-function paint(mesh, hex, shade = 0) {
+const smoothstep = (a, b, x) => {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+
+// Köşe renkleri: yukarı bakan yüzler hafif açık, zemine yakın dikey yüzler koyu (sahte ortam gölgesi)
+function paint(mesh, hex, { shade = 0, ao = false } = {}) {
   const c = color3(hex);
   const n = mesh.getTotalVertices();
   const normals = mesh.getVerticesData(VertexBuffer.NormalKind);
+  const positions = mesh.getVerticesData(VertexBuffer.PositionKind);
   const colors = new Float32Array(n * 4);
   for (let i = 0; i < n; i++) {
-    // Hafif yön gölgelemesi: yukarı bakan yüzler biraz daha açık (low-poly hissi)
     const up = normals ? normals[i * 3 + 1] : 0;
-    const k = 1 + shade * up;
+    let k = 1 + shade * up;
+    if (ao && up < 0.5) k *= 0.7 + 0.3 * smoothstep(0, 0.45, positions[i * 3 + 1]);
     colors[i * 4] = Math.min(1, c.r * k);
     colors[i * 4 + 1] = Math.min(1, c.g * k);
     colors[i * 4 + 2] = Math.min(1, c.b * k);
@@ -67,97 +48,100 @@ class Group {
     this.kit = kit;
     this.pivot = pivot;
     this.anim = anim;
-    this.solid = [];
-    this.glow = new Map(); // renk -> mesh[]
-  }
-
-  _add(mesh, hex, opts = {}) {
-    const { x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1, flat = true } = opts;
-    mesh.position.set(x, y, z);
-    mesh.rotation.set(rx, ry, rz);
-    mesh.scaling.set(sx, sy, sz);
-    mesh.bakeCurrentTransformIntoVertices();
-    if (flat && opts.smooth !== true) mesh.convertToFlatShadedMesh();
-    if (opts.glow) {
-      const key = `${hex}|${opts.alpha ?? 1}`;
-      if (!this.glow.has(key)) this.glow.set(key, []);
-      paint(mesh, '#ffffff');
-      this.glow.get(key).push(mesh);
-    } else {
-      paint(mesh, hex, opts.shade ?? 0.08);
-      this.solid.push(mesh);
-    }
-    return mesh;
+    this.parts = new Map(); // malzeme anahtarı -> mesh[]
   }
 
   get scene() {
     return this.kit.scene;
   }
 
+  _add(mesh, hex, opts = {}, smoothDefault = false) {
+    const { x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1 } = opts;
+    mesh.position.set(x, y, z);
+    mesh.rotation.set(rx, ry, rz);
+    mesh.scaling.set(sx, sy, sz);
+    mesh.bakeCurrentTransformIntoVertices();
+    const smooth = opts.smooth ?? smoothDefault;
+    if (!smooth && opts.flat !== false) mesh.convertToFlatShadedMesh();
+    let key;
+    if (opts.glow) {
+      key = `glow:${hex}|${opts.alpha ?? 1}`;
+      paint(mesh, '#ffffff');
+    } else {
+      key = opts.mat || 'solid';
+      const isRoot = this.pivot.lengthSquared() === 0;
+      paint(mesh, hex, { shade: key.startsWith('facade') ? 0 : opts.shade ?? 0.08, ao: isRoot && opts.ao !== false });
+    }
+    if (!this.parts.has(key)) this.parts.set(key, []);
+    this.parts.get(key).push(mesh);
+    return mesh;
+  }
+
+  // Kutu. opts.uv: 6 yüz için [u0, v0, u1, v1] (cephe dokuları için)
   box(w, h, d, hex, opts = {}) {
-    const m = CreateBox(`p${uid++}`, { width: w, height: h, depth: d }, this.scene);
+    const faceUV = opts.uv ? opts.uv.map((u) => new Vector4(...u)) : undefined;
+    const m = CreateBox(`p${uid++}`, { width: w, height: h, depth: d, faceUV, wrap: true }, this.scene);
     return this._add(m, hex, { ...opts, flat: false });
   }
 
-  // Silindir; y = merkez yüksekliği. dTop=0 -> koni
+  // Silindir; y = merkez yüksekliği. dTop=0 -> koni. 8+ kenarda yumuşak gölgelenir.
   cyl(dTop, dBottom, h, hex, opts = {}) {
+    const tess = opts.tess ?? 16;
     const m = CreateCylinder(
       `p${uid++}`,
-      { diameterTop: dTop, diameterBottom: dBottom, height: h, tessellation: opts.tess ?? 10, arc: opts.arc ?? 1 },
+      { diameterTop: dTop, diameterBottom: dBottom, height: h, tessellation: tess, arc: opts.arc ?? 1 },
       this.scene,
     );
-    return this._add(m, hex, opts);
+    return this._add(m, hex, opts, tess >= 8);
   }
 
   sphere(d, hex, opts = {}) {
-    const m = opts.ico
+    const ico = opts.ico;
+    const m = ico
       ? CreateIcoSphere(`p${uid++}`, { radius: d / 2, subdivisions: opts.sub ?? 1 }, this.scene)
-      : CreateSphere(`p${uid++}`, { diameter: d, segments: opts.seg ?? 6, slice: opts.slice ?? 1 }, this.scene);
-    return this._add(m, hex, opts);
+      : CreateSphere(`p${uid++}`, { diameter: d, segments: opts.seg ?? 10, slice: opts.slice ?? 1 }, this.scene);
+    return this._add(m, hex, opts, ico ? (opts.sub ?? 1) >= 3 : (opts.seg ?? 10) >= 8);
   }
 
   dome(d, hex, opts = {}) {
-    return this.sphere(d, hex, { seg: 8, slice: 0.5, ...opts });
+    return this.sphere(d, hex, { seg: 14, slice: 0.5, ...opts });
   }
 
   torus(d, thickness, hex, opts = {}) {
-    const m = CreateTorus(
-      `p${uid++}`,
-      { diameter: d, thickness, tessellation: opts.tess ?? 16 },
-      this.scene,
-    );
-    return this._add(m, hex, opts);
+    const m = CreateTorus(`p${uid++}`, { diameter: d, thickness, tessellation: opts.tess ?? 24 }, this.scene);
+    return this._add(m, hex, opts, true);
   }
 
   knot(radius, tube, hex, opts = {}) {
     const m = CreateTorusKnot(
       `p${uid++}`,
-      { radius, tube, radialSegments: 48, tubularSegments: 6, p: opts.p ?? 2, q: opts.q ?? 3 },
+      { radius, tube, radialSegments: 64, tubularSegments: 8, p: opts.p ?? 2, q: opts.q ?? 3 },
       this.scene,
     );
-    return this._add(m, hex, opts);
+    return this._add(m, hex, opts, true);
   }
 
   // Dönel profil: points = [[yarıçap, y], ...]
   lathe(points, hex, opts = {}) {
+    const tess = opts.tess ?? 20;
     const m = CreateLathe(
       `p${uid++}`,
-      { shape: points.map(([r, y]) => new Vector3(r, y, 0)), tessellation: opts.tess ?? 12, cap: Mesh.CAP_ALL },
+      { shape: points.map(([r, y]) => new Vector3(r, y, 0)), tessellation: tess, cap: Mesh.CAP_ALL },
       this.scene,
     );
-    return this._add(m, hex, opts);
+    return this._add(m, hex, opts, tess >= 8);
   }
 
-  // Yatay boru (iki nokta arası, x veya z ekseninde)
+  // Yatay boru (iki nokta arası)
   pipe(x1, z1, x2, z2, y, d, hex, opts = {}) {
     const len = Math.hypot(x2 - x1, z2 - z1);
     const ang = Math.atan2(x2 - x1, z2 - z1);
-    return this.cyl(d, d, len, hex, { tess: 6, ...opts, x: (x1 + x2) / 2, y, z: (z1 + z2) / 2, rx: Math.PI / 2, ry: ang });
+    return this.cyl(d, d, len, hex, { tess: 10, mat: 'metal', ...opts, x: (x1 + x2) / 2, y, z: (z1 + z2) / 2, rx: Math.PI / 2, ry: ang });
   }
 
   // Dikey boru/direk
   pole(x, z, y0, y1, d, hex, opts = {}) {
-    return this.cyl(d, d, y1 - y0, hex, { tess: 6, ...opts, x, z, y: (y0 + y1) / 2 });
+    return this.cyl(d, d, y1 - y0, hex, { tess: 8, mat: 'metal', ...opts, x, z, y: (y0 + y1) / 2 });
   }
 
   emit(type, x, y, z) {
@@ -165,7 +149,7 @@ class Group {
   }
 
   // Hareketli alt grup. Alt grubun parçaları pivot'a göre yerel koordinatla çizilir.
-  // anim: { type: 'spin'|'nod'|'bob'|'pulse', axis, speed, amp, driver: 'wind'|'sun'|undefined }
+  // anim: { type: 'spin'|'nod'|'bob'|'pulse'|'track', axis, speed, amp, driver: 'wind' }
   group(x, y, z, anim) {
     const g = new Group(this.kit, new Vector3(x + this.pivot.x, y + this.pivot.y, z + this.pivot.z), anim);
     this.kit.groups.push(g);
@@ -197,22 +181,15 @@ export function buildTemplate(scene, name, build) {
   const groups = [];
   for (const g of kit.groups) {
     const meshes = [];
-    const solid = merge(g.solid, `${name}:solid`);
-    if (solid) {
-      solid.material = solidMaterial(scene);
-      solid.receiveShadows = true;
-      meshes.push(solid);
-    }
-    for (const [key, list] of g.glow) {
-      const [hex, alpha] = key.split('|');
-      const m = merge(list, `${name}:glow:${hex}`);
-      m.material = glowMaterial(scene, hex, Number(alpha));
-      m.metadata = { glow: true, transparent: Number(alpha) < 1 };
-      meshes.push(m);
-    }
-    for (const m of meshes) {
+    for (const [key, list] of g.parts) {
+      const m = merge(list, `${name}:${key}`);
+      m.material = getMaterial(scene, key);
+      const glow = key.startsWith('glow:');
+      m.metadata = { key, glow, transparent: isTransparentKey(key), noGlow: isNoGlowKey(key) };
+      if (!glow) m.receiveShadows = true;
       m.isVisible = false; // kaynak gizli; instance'lar çizilir
       m.isPickable = false;
+      meshes.push(m);
     }
     groups.push({ pivot: g.pivot, anim: g.anim, meshes });
   }

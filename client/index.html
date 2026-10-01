@@ -63,6 +63,10 @@
           </div>
           <div class="power-bar"><div id="hud-power-fill"></div><div id="hud-power-over"></div></div>
           <div class="hud-sub" id="hud-power-note">—</div>
+          <div class="battery hidden" id="hud-battery">
+            <div class="battery-bar"><div id="hud-battery-fill"></div></div>
+            <span id="hud-battery-text">🔋 %0</span>
+          </div>
         </div>
       </div>
       <div class="hud-group hud-env">
@@ -74,6 +78,7 @@
       <div class="hud-actions">
         <button class="icon-btn" id="btn-home" title="Adama dön (H)">🏝️</button>
         <button class="icon-btn" id="btn-sound" title="Ses">🔊</button>
+        <button class="icon-btn" id="btn-settings" title="Ayarlar">⚙️</button>
         <button class="icon-btn" id="btn-help" title="Yardım">❔</button>
       </div>
     </header>
@@ -125,6 +130,15 @@
 
     <div id="toasts"></div>
 
+    <!-- Ayarlar -->
+    <div id="settings" class="overlay hidden"></div>
+
+    <!-- Eğitim -->
+    <div id="tutorial-ring" class="hidden"></div>
+    <div id="tutorial" class="panel hidden"></div>
+
+    <div id="fps" class="hidden"></div>
+
     <!-- Yardım -->
     <div id="help" class="overlay hidden">
       <div class="help-card panel">
@@ -136,6 +150,7 @@
           <li><b>Dengeyi koru:</b> Arz talepten azsa karartma olur ve insanlar şehri terk eder. Fazla elektrik boşa gider.</li>
           <li><b>Gece & rüzgar:</b> Güneş geceleri üretmez, rüzgar sürekli değişir. Karışık bir şebeke kur!</li>
           <li><b>Kirlilik:</b> Kömür/petrol/gaz ucuz ve güçlüdür ama havayı kirletir ve yakıt parası yer. Parklar yardımcı olur.</li>
+          <li><b>Talep eğrisi:</b> Gece talep düşer, akşam 19-20 arası zirve yapar. 🔋 Depolama fazlayı saklayıp zirvede şehre verir.</li>
           <li><b>Yer açmak için:</b> Eski santralleri sat (yüzde 50 iade) veya yükselt; arazi satın al.</li>
           <li><b>Yeniden doğuş:</b> Metropol'e ulaşınca baştan başla ama kalıcı gelir çarpanı kazan.</li>
         </ol>

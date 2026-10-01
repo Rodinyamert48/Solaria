@@ -8,55 +8,108 @@ export const TOWER_FLOORS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32];
 const RES_COLORS = ['#f2e3c9', '#e8cfc0', '#d9e4ea', '#f0d9a8', '#e6e0f0', '#cfe3cf'];
 const OFFICE_COLORS = ['#a9c7df', '#8fb3cf', '#b7c4d6', '#9fd0d8'];
 
-// Kule gövdesi: kat sayısı kadar pencere şeridi. style: 'res' | 'office'
+const CELLS = 8; // materials.js FACADE_CELLS ile aynı
+
+// Cephe dokusu UV'leri: 4 yan yüz pencere ızgarası, üst/alt yüz düz duvar rengi
+function facadeUV(cols, rows, variant) {
+  const u0 = ((variant * 3) % CELLS) / CELLS;
+  const v0 = ((variant * 5) % CELLS) / CELLS;
+  const side = [u0, v0, u0 + cols / CELLS, v0 + rows / CELLS];
+  const flat = [0.002, 0.002, 0.006, 0.006];
+  return [side, side, side, side, flat, flat];
+}
+
+function roofDetails(k, w, h, floors, style, variant) {
+  // korkuluk
+  const t = 0.04;
+  for (const [x, z, bw, bd] of [[0, w / 2 - t / 2, w, t], [0, -w / 2 + t / 2, w, t], [w / 2 - t / 2, 0, t, w], [-w / 2 + t / 2, 0, t, w]])
+    k.box(bw, 0.08, bd, style === 'office' ? '#9aa6b2' : '#b9b2a6', { x, z, y: h + 0.04 });
+  // klima üniteleri
+  for (let i = 0; i < 1 + (variant % 3); i++) k.box(0.16, 0.08, 0.12, '#aeb6bf', { x: -0.22 + i * 0.2, z: 0.18, y: h + 0.04, mat: 'metal' });
+  if (style === 'res' && floors >= 4) {
+    // su deposu
+    k.cyl(0.18, 0.18, 0.18, '#8c7b66', { x: 0.2, z: -0.18, y: h + 0.19, tess: 10 });
+    for (const [x, z] of [[0.13, -0.11], [0.27, -0.11], [0.13, -0.25], [0.27, -0.25]]) k.box(0.02, 0.1, 0.02, '#5d5348', { x, z, y: h + 0.05 });
+  }
+  if (style === 'office' && floors >= 16) {
+    k.cyl(0.42, 0.42, 0.02, '#4b5563', { y: h + 0.02, z: -0.05, tess: 16 });
+    k.box(0.22, 0.005, 0.04, '#f3f1ea', { y: h + 0.035, z: -0.05 });
+  }
+}
+
+// Gökdelen/apartman: pencere dokulu cephe, zemin kat lobi, yüksek ofislerde kademeli üst kısım
 export function towerModel(floors, style, variant) {
   return (k) => {
-    const h = floors * FLOOR_H;
-    const body = style === 'office' ? OFFICE_COLORS[variant % OFFICE_COLORS.length] : RES_COLORS[variant % RES_COLORS.length];
-    k.box(1, h, 1, body, { y: h / 2 });
-    for (let f = 0; f < floors; f++) {
-      const y = f * FLOOR_H + FLOOR_H * 0.55;
-      k.box(1.01, FLOOR_H * 0.42, style === 'office' ? 1.01 : 0.7, G.window, { y, glow: true });
-      if (style !== 'office') k.box(0.7, FLOOR_H * 0.42, 1.01, G.window, { y, glow: true });
+    const tint = style === 'office' ? OFFICE_COLORS[variant % OFFICE_COLORS.length] : RES_COLORS[variant % RES_COLORS.length];
+    const mat = `facade:${style}`;
+    // zemin kat: ofiste cam lobi, konutta dükkân sırası
+    k.box(1.02, FLOOR_H, 1.02, style === 'office' ? '#7d9ab5' : '#d8cfc0', { y: FLOOR_H / 2, mat: style === 'office' ? 'glass' : 'solid' });
+    k.box(1.06, 0.03, 1.06, '#9aa0a8', { y: FLOOR_H + 0.015 });
+    const upper = floors - 1;
+    if (upper <= 0) {
+      roofDetails(k, 1.02, FLOOR_H, floors, style, variant);
+      return;
     }
-    k.box(1.04, 0.05, 1.04, style === 'office' ? C.steel : C.grey, { y: h + 0.025 });
-    if (floors >= 6) k.box(0.4, 0.12, 0.3, C.grey, { y: h + 0.1, x: 0.15 });
+    if (style === 'office' && floors >= 12) {
+      const low = Math.round(upper * 0.65);
+      const high = upper - low;
+      const h1 = low * FLOOR_H;
+      const h2 = high * FLOOR_H;
+      k.box(1, h1, 1, tint, { y: FLOOR_H + h1 / 2, mat, uv: facadeUV(4, low, variant) });
+      k.box(1.04, 0.04, 1.04, '#c9d3dc', { y: FLOOR_H + h1 + 0.02 });
+      k.box(0.78, h2, 0.78, tint, { y: FLOOR_H + h1 + h2 / 2, mat, uv: facadeUV(3, high, variant + 1) });
+      roofDetails(k, 0.78, FLOOR_H + h1 + h2, floors, style, variant);
+    } else {
+      const h = upper * FLOOR_H;
+      k.box(1, h, 1, tint, { y: FLOOR_H + h / 2, mat, uv: facadeUV(4, upper, variant) });
+      // konutlarda kat silmeleri (yatay çizgiler)
+      if (style === 'res') for (let f = 3; f < upper; f += 3) k.box(1.02, 0.02, 1.02, '#e7e1d6', { y: FLOOR_H + f * FLOOR_H });
+      roofDetails(k, 1, FLOOR_H + h, floors, style, variant);
+    }
   };
 }
 
 export function houseModel(variant) {
   return (k) => {
     const wall = RES_COLORS[variant % RES_COLORS.length];
-    const roof = [C.red, C.brick, C.blue, C.darkLeaf][variant % 4];
-    k.box(0.8, 0.32, 0.65, wall, { y: 0.16 });
-    k.box(0.5, 0.08, 0.66, G.window, { y: 0.18, glow: true });
+    const roof = ['#b5523f', '#8c4a3a', '#5f6b7a', '#7a5a45'][variant % 4];
+    k.box(0.78, 0.34, 0.62, wall, { y: 0.17, mat: 'facade:res', uv: facadeUV(2, 1.4, variant) });
+    k.box(0.12, 0.2, 0.02, '#5a3d2b', { x: 0.2, y: 0.1, z: -0.315 });
     // üçgen çatı: döndürülmüş 3 kenarlı silindir
-    k.cyl(0.62, 0.62, 0.9, roof, { tess: 3, rz: PI / 2, y: 0.43, sz: 1.25, sx: 0.7 });
-    k.box(0.08, 0.18, 0.08, C.brick, { x: 0.22, y: 0.55, z: 0.1 });
+    k.cyl(0.62, 0.62, 0.9, roof, { tess: 3, rz: PI / 2, y: 0.44, sz: 1.25, sx: 0.7 });
+    k.box(0.08, 0.2, 0.08, '#8c5a44', { x: 0.22, y: 0.58, z: 0.1 });
+    // bahçe çiti ve çalı
+    k.box(0.9, 0.06, 0.02, '#f3efe6', { y: 0.05, z: -0.44 });
+    k.sphere(0.16, '#4f9d57', { ico: true, sub: 1, x: -0.3, z: -0.38, y: 0.07, sy: 0.8 });
   };
 }
 
 export function shopModel(variant) {
   return (k) => {
     const wall = RES_COLORS[(variant + 2) % RES_COLORS.length];
-    k.box(0.85, 0.44, 0.8, wall, { y: 0.22 });
-    k.box(0.86, 0.14, 0.81, G.window, { y: 0.12, glow: true });
-    k.box(0.9, 0.04, 0.3, [C.red, C.teal, C.orange, C.purple][variant % 4], { y: 0.24, z: -0.5, rx: 0.3 });
-    k.box(0.88, 0.05, 0.83, C.grey, { y: 0.46 });
+    const accent = [C.red, C.teal, C.orange, C.purple][variant % 4];
+    // vitrin katı (cam) + üst kat
+    k.box(0.84, 0.2, 0.78, '#7f9cb3', { y: 0.1, mat: 'glass' });
+    k.box(0.86, 0.26, 0.8, wall, { y: 0.33, mat: 'facade:res', uv: facadeUV(2, 1, variant) });
+    k.box(0.9, 0.04, 0.84, '#a8a196', { y: 0.47 });
+    k.box(0.9, 0.03, 0.26, accent, { y: 0.22, z: -0.5, rx: 0.35 });
+    k.box(0.5, 0.07, 0.01, G.window, { y: 0.27, z: -0.405, glow: true });
   };
 }
 
 export function spireModel(k) {
-  k.cyl(0.05, 0.25, 1.2, C.steel, { y: 0.6, tess: 6 });
+  k.cyl(0.05, 0.25, 1.2, C.steel, { y: 0.6, tess: 8, mat: 'metal' });
   beacon(k, 0, 1.25, 0, G.red, 0.1);
 }
 
 export function carModel(variant) {
-  const body = [C.red, C.blue, C.yellow, C.white, C.teal, C.orange][variant % 6];
+  const body = [C.red, C.blue, C.yellow, C.white, C.teal, C.orange, '#2f3542'][variant % 7];
   return (k) => {
-    k.box(0.28, 0.08, 0.14, body, { y: 0.07 });
-    k.box(0.15, 0.07, 0.12, body, { y: 0.14, x: -0.02 });
-    k.box(0.16, 0.05, 0.125, G.window, { y: 0.14, x: -0.02, glow: true });
+    k.box(0.3, 0.07, 0.14, body, { y: 0.065, mat: 'metal' });
+    k.box(0.16, 0.06, 0.12, '#9cc3e0', { y: 0.125, x: -0.02, mat: 'glass' });
+    for (const [x, z] of [[0.09, 0.065], [-0.09, 0.065], [0.09, -0.065], [-0.09, -0.065]])
+      k.box(0.06, 0.05, 0.02, '#1f2228', { x, z, y: 0.03 });
+    k.box(0.01, 0.025, 0.1, '#fff3d6', { x: 0.151, y: 0.07, mat: 'lamp' });
   };
 }
 

@@ -15,7 +15,7 @@ const NIGHT = { sun: 0.03, wind: 1, daylight: 0 };
 const fresh = () => A.newPlayerState({ id: 't', name: 'Test', color: '#fff' });
 
 test('her kategoride 6-7 jeneratör var', () => {
-  assert.equal(CATEGORIES.length, 10);
+  assert.equal(CATEGORIES.length, 11);
   for (const c of CATEGORIES) {
     const n = GENERATORS.filter((g) => g.cat === c.id).length;
     assert.ok(n >= 6 && n <= 7, `${c.id}: ${n}`);
@@ -157,4 +157,52 @@ test('biçimlendirme', () => {
   assert.equal(formatMoney(5), '$5');
   assert.equal(formatPower(1500), '1,5 MW');
   assert.equal(formatPower(2.5), '2,5 kW');
+});
+
+test('talep günün saatine göre değişir (akşam zirvesi, gece düşüş)', async () => {
+  const { demandFactor, DAY_LENGTH_MS } = await import('../shared/env.js');
+  const at = (hour) => demandFactor((((hour - 6 + 24) % 24) / 24) * DAY_LENGTH_MS);
+  assert.ok(at(19.5) > 1.1);
+  assert.ok(at(3.5) < 0.8);
+  assert.ok(Math.abs(at(13) - 1) < 0.05);
+});
+
+test('depolama fazlayı şarj eder, açıkta deşarj eder', () => {
+  const p = fresh();
+  // Üretim, şehrin kapasitesinden (20 kişi) çok fazla -> gündüz fazla oluşur
+  p.generators = [
+    { gid: 1, type: 'solar_dish', x: 13, y: 7, level: 1 },
+    { gid: 2, type: 'battery_liion', x: 15, y: 8, level: 1 },
+  ];
+  p.pop = 20;
+  const def = GENERATOR_BY_ID.battery_liion;
+  assert.ok(def.storage && def.capacity > 0);
+  // Gündüz: fazla elektrik depoya gider
+  for (let i = 0; i < 20; i++) stepPlayer(p, { ...DAY, demand: 1 }, 0.5);
+  assert.ok(p.stored > 0);
+  const before = p.stored;
+  // Gece: güneş yok, talebi depo karşılar
+  const s = computeStats(p, { ...NIGHT, demand: 1 }, 0.5);
+  assert.ok(s.discharge > 0);
+  assert.ok(s.coverage > 0.99);
+  stepPlayer(p, { ...NIGHT, demand: 1 }, 0.5);
+  assert.ok(p.stored < before);
+});
+
+test('depolama santral gibi üretim saymaz', () => {
+  const p = fresh();
+  p.generators = [{ gid: 1, type: 'battery_mega', x: 0, y: 0, level: 1 }];
+  const s = computeStats(p, DAY);
+  assert.equal(s.supply, 0);
+  assert.ok(s.storePower > 0);
+});
+
+test('zorluk geliri etkiler', () => {
+  const p = fresh();
+  p.pop = 1;
+  const normal = computeStats(p, DAY).income;
+  p.difficulty = 'kolay';
+  assert.ok(computeStats(p, DAY).income > normal);
+  p.difficulty = 'zor';
+  assert.ok(computeStats(p, DAY).income < normal);
 });

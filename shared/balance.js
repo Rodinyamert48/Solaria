@@ -37,4 +37,14 @@ export const BALANCE = {
   rebirthPopGrowth: 5,
   rebirthIncomeBonus: 0.5, // her yeniden doğuş +%50 gelir
   startMoney: 50,
+
+  // Karartmada (talebin bu orandan azı karşılanırken) şehre yeni kimse gelmez
+  blackoutGrowthStop: 0.95,
+
+  // Zorluk: yalnızca tek oyunculu (tarayıcı içi) modda seçilebilir; sunucu her zaman 'normal'
+  difficulty: {
+    kolay: { name: 'Kolay', income: 1.5, growth: 1.3 },
+    normal: { name: 'Normal', income: 1, growth: 1 },
+    zor: { name: 'Zor', income: 0.7, growth: 0.8 },
+  },
 };

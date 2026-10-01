@@ -16,6 +16,7 @@ export function newPlayerState({ id, name, color }) {
     runEarned: 0,
     rebirths: 0,
     pop: 3,
+    stored: 0,
     bestCity: 0,
     land: 0,
     centers: emptyCenters(),
@@ -42,6 +43,7 @@ export function migratePlayer(p) {
   p.land ??= 0;
   p.bestCity ??= 0;
   p.lastNet ??= 0;
+  p.stored ??= 0;
   p.nextGid ??= p.generators.reduce((m, g) => Math.max(m, g.gid), 0) + 1;
   return p;
 }
@@ -132,6 +134,7 @@ export function rebirth(p) {
     runEarned: 0,
     rebirths: p.rebirths + 1,
     pop: fresh.pop,
+    stored: 0,
     bestCity: 0,
     land: 0,
     centers: fresh.centers,

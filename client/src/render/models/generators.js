@@ -706,6 +706,102 @@ export const MODELS = {
     building(k, 1.4, 1.4, 0.8, 0.8, 0.5, C.dark, C.purple, { windows: G.cyan });
   },
 
+  // ─────────────── 🔋 DEPOLAMA ───────────────
+  battery_lead(k) {
+    pad(k, 1, C.concrete);
+    k.box(0.7, 0.5, 0.4, '#8d98a5', { y: 0.25, z: 0.05, mat: 'metal' });
+    for (let i = 0; i < 5; i++) k.box(0.02, 0.32, 0.41, '#6c7783', { x: -0.24 + i * 0.12, y: 0.25, z: 0.05 });
+    k.box(0.72, 0.04, 0.42, C.hazard, { y: 0.52, z: 0.05 });
+    k.sphere(0.05, G.nuclear, { x: 0.28, y: 0.42, z: -0.16, glow: true, seg: 6 });
+    k.box(0.2, 0.25, 0.2, '#5b6470', { x: -0.22, y: 0.125, z: -0.3, mat: 'metal' });
+  },
+
+  battery_liion(k) {
+    pad(k, 1, C.concrete);
+    k.box(0.86, 0.42, 0.5, '#eef0f2', { y: 0.23, mat: 'metal' });
+    for (let i = 0; i < 9; i++) k.box(0.015, 0.36, 0.51, '#d5d9de', { x: -0.38 + i * 0.095, y: 0.23 });
+    k.box(0.3, 0.1, 0.3, '#9aa3ad', { x: 0.2, y: 0.49, mat: 'metal' });
+    fan(k, 0.2, 0.55, 0, 0.22, 9);
+    k.box(0.14, 0.04, 0.01, G.nuclear, { x: -0.25, y: 0.34, z: -0.256, glow: true });
+    k.box(0.14, 0.04, 0.01, G.cyan, { x: -0.25, y: 0.28, z: -0.256, glow: true });
+  },
+
+  battery_flow(k) {
+    pad(k, 2, C.concrete);
+    tank(k, -0.5, -0.45, 0.62, 0.9, '#c94f4f', { band: '#8e2f2f' });
+    tank(k, 0.25, -0.45, 0.62, 0.9, '#3d6fc9', { band: '#24448a' });
+    building(k, 0, 0.5, 1.5, 0.6, 0.45, '#e9ecef', C.teal, { windows: G.window });
+    for (let i = 0; i < 4; i++) k.box(0.22, 0.3, 0.08, '#7a8794', { x: -0.45 + i * 0.3, y: 0.15, z: 0.13, mat: 'metal' });
+    k.pipe(-0.5, -0.45, -0.5, 0.15, 0.5, 0.07, '#c94f4f');
+    k.pipe(0.25, -0.45, 0.25, 0.15, 0.5, 0.07, '#3d6fc9');
+    k.box(0.12, 0.05, 0.01, G.nuclear, { x: 0.55, y: 0.3, z: 0.19, glow: true });
+  },
+
+  storage_air(k) {
+    pad(k, 2, C.concrete);
+    for (const z of [-0.55, -0.1, 0.35]) {
+      k.cyl(0.36, 0.36, 1.4, '#dfe3e8', { rz: PI / 2, y: 0.28, z, x: -0.15, mat: 'metal' });
+      k.sphere(0.36, '#dfe3e8', { x: -0.85, y: 0.28, z, mat: 'metal' });
+      k.sphere(0.36, '#dfe3e8', { x: 0.55, y: 0.28, z, mat: 'metal' });
+      for (const x of [-0.6, 0.3]) k.box(0.08, 0.12, 0.3, '#6b7480', { x, y: 0.06, z });
+    }
+    building(k, 0.55, 0.75, 0.7, 0.35, 0.4, '#c5ccd3', C.steel);
+    k.pipe(-0.85, -0.55, -0.85, 0.75, 0.55, 0.08, C.steel);
+    k.pipe(-0.85, 0.75, 0.2, 0.75, 0.55, 0.08, C.steel);
+  },
+
+  storage_pumped(k) {
+    pad(k, 3, C.rock);
+    // yüksek rezervuar (set üstünde)
+    k.box(1.6, 1.0, 1.4, '#8a8178', { x: -0.6, y: 0.5, z: -0.6 });
+    k.box(1.7, 1.05, 0.12, C.concrete, { x: -0.6, y: 0.52, z: 0.12 });
+    water(k, 1.45, 1.25, -0.6, -0.65, 1.02, C.deepWater);
+    // cebri boru ve santral binası
+    k.cyl(0.16, 0.16, 1.5, '#6f7780', { x: 0.25, y: 0.55, z: 0.25, rx: 0.9, ry: -0.7, mat: 'metal' });
+    building(k, 0.85, 0.75, 0.9, 0.7, 0.45, '#e2e2dc', C.blue, { windows: G.window });
+    // alt havuz
+    water(k, 1.3, 0.9, -0.55, 0.95, 0.08, C.water);
+    lattice(k, 1.15, -0.95, 1.1, 0.26, 0.08);
+  },
+
+  battery_mega(k) {
+    pad(k, 3, C.concrete);
+    fence(k, 3);
+    for (let r = 0; r < 3; r++)
+      for (let c = 0; c < 3; c++) {
+        const x = -0.95 + c * 0.75;
+        const z = -0.95 + r * 0.62;
+        k.box(0.62, 0.32, 0.4, '#eef0f2', { x, z, y: 0.17, mat: 'metal' });
+        k.box(0.2, 0.06, 0.18, '#9aa3ad', { x: x + 0.15, z, y: 0.36, mat: 'metal' });
+        k.box(0.1, 0.03, 0.01, G.nuclear, { x: x - 0.2, z: z - 0.205, y: 0.24, glow: true });
+      }
+    // trafo merkezi
+    k.box(0.6, 0.45, 0.45, '#7d8792', { x: 0.8, z: 1.0, y: 0.23, mat: 'metal' });
+    for (let i = 0; i < 3; i++) k.cyl(0.05, 0.07, 0.25, '#c9ced4', { x: 0.62 + i * 0.18, z: 1.0, y: 0.58, tess: 8 });
+    lattice(k, -0.9, 1.05, 1.0, 0.24, 0.08);
+  },
+
+  storage_gravity(k) {
+    pad(k, 3, C.concrete);
+    // beton blok kulesi
+    k.box(1.1, 0.12, 1.1, '#9aa0a8', { y: 0.06 });
+    for (let i = 0; i < 9; i++) {
+      const lvl = Math.floor(i / 3);
+      const x = -0.35 + (i % 3) * 0.35;
+      k.box(0.3, 0.28, 0.3, '#c8c2b6', { x, z: lvl % 2 ? 0.35 : -0.35, y: 0.26 + lvl * 0.3 });
+    }
+    k.box(0.22, 3.2, 0.22, '#d2d6db', { y: 1.6, mat: 'metal' });
+    // dönen vinç kolu ve inip kalkan blok
+    const arm = k.group(0, 3.2, 0, { type: 'spin', axis: 'y', speed: 0.25 });
+    arm.box(2.4, 0.12, 0.14, '#e8b83a', { x: 0.3, mat: 'metal' });
+    arm.box(0.3, 0.25, 0.3, '#7a838d', { x: -0.8, y: -0.12 });
+    const hook = arm.group(1.25, -1.2, 0, { type: 'bob', amp: 0.6, speed: 0.6 });
+    hook.box(0.28, 0.26, 0.28, '#c8c2b6');
+    hook.pole(0, 0, 0.13, 1.2, 0.02, '#3d434d');
+    beacon(k, 0, 3.32, 0);
+    building(k, 1.0, -1.0, 0.6, 0.5, 0.35, '#e2e2dc', C.green);
+  },
+
   future_blackhole(k) {
     pad(k, 4, C.black);
     k.cyl(3.4, 3.7, 0.2, C.dark, { y: 0.1, tess: 8 });

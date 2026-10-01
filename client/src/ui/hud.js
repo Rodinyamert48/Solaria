@@ -21,6 +21,9 @@ export class Hud {
       sun: $('#hud-sun'),
       wind: $('#hud-wind'),
       air: $('#hud-air'),
+      battery: $('#hud-battery'),
+      batteryFill: $('#hud-battery-fill'),
+      batteryText: $('#hud-battery-text'),
     };
   }
 
@@ -45,14 +48,27 @@ export class Hud {
     this.el.supply.textContent = formatPower(s.supply);
     this.el.demand.textContent = formatPower(s.demand);
 
-    const max = Math.max(s.supply, s.demand, 1e-9);
-    const fill = s.demand > 0 ? Math.min(1, s.supply / s.demand) : 1;
+    const sup = s.available ?? s.supply;
+    const max = Math.max(sup, s.demand, 1e-9);
+    const fill = s.demand > 0 ? Math.min(1, sup / s.demand) : 1;
     this.el.fill.style.width = `${(s.demand / max) * fill * 100}%`;
     this.el.fill.classList.toggle('short', s.coverage < 0.999);
     this.el.over.style.width = `${(s.wasted / max) * 100}%`;
 
+    // Depolama göstergesi
+    const bat = this.el.battery;
+    if (s.storeCap > 0) {
+      bat.classList.remove('hidden');
+      const pct = Math.round((s.stored / s.storeCap) * 100);
+      this.el.batteryFill.style.width = `${pct}%`;
+      this.el.batteryText.textContent = `🔋 %${pct}${s.discharge > 0 ? ' ↓' : s.charge > 0 ? ' ↑' : ''}`;
+      this.el.batteryText.title = s.discharge > 0 ? 'Depo şehre güç veriyor' : s.charge > 0 ? 'Fazla elektrik depolanıyor' : 'Depo beklemede';
+    } else bat.classList.add('hidden');
+
     let note;
     if (s.coverage < 0.999) note = `⚠️ Karartma! Talebin %${Math.round(s.coverage * 100)}'i karşılanıyor`;
+    else if (s.discharge > 0) note = '🔋 Depo şehri besliyor';
+    else if ((s.demandFactor ?? 1) > 1.08) note = '🌆 Akşam zirvesi: talep yüksek';
     else if (s.wasted > s.supply * 0.25) note = '💡 Fazla elektrik boşa gidiyor — şehri büyüt';
     else if (state.me.pop >= s.capacity * 0.97) note = '🏠 Şehir dolu — konut merkezini yükselt';
     else note = '✅ Şehrin tamamı aydınlık';

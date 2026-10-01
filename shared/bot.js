@@ -7,7 +7,7 @@ import { findFreeSpot, MAX_LAND_LEVEL } from './grid.js';
 import * as A from './actions.js';
 
 // Kararlar ortalama koşullara göre verilir (gece/gündüz dalgalanmasında panik yapmasın)
-export const AVG_ENV = { sun: 0.5, wind: 1, daylight: 0.6 };
+export const AVG_ENV = { sun: 0.5, wind: 1, daylight: 0.6, demand: 1 };
 
 function effPower(def) {
   const cat = CATEGORY_BY_ID[def.cat];
@@ -20,7 +20,7 @@ function bestGenerator(budget, favorites) {
   let best = null;
   let bestScore = -Infinity;
   for (const def of GENERATORS) {
-    if (def.cost > budget) continue;
+    if (def.cost > budget || def.storage) continue;
     const score = (effPower(def) / def.size ** 0.5) * (favorites?.includes(def.cat) ? 2 : 1);
     if (score > bestScore) {
       best = def;
